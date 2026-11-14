@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>分布式锁的三次迭代</title>
+  <style>
+    body { margin: 0; padding: 40px 24px; background: #101826; color: #e8edf7; font-family: "Songti SC", Georgia, serif; line-height: 1.8; }
+    main { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 30px; margin: 0 0 10px; color: #9dc0ff; }
+    h2 { margin-top: 30px; font-size: 19px; color: #cfe0ff; }
+    .meta { color: #7f8ca6; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; }
+    p { margin: 0 0 14px; color: #d3dbea; }
+    em { color: #ffd48a; font-style: normal; }
+    .hidden-tech { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="meta">并发 · 分布式系统 · 2026-11</div>
+    <h1>分布式锁的三次迭代</h1>
+    <p>分布式锁的难点不在“加锁”，而在“租约到期之后，谁也说不清锁还在不在”。这篇笔记按时间线记录三次关键迭代。</p>
+
+    <h2>第一代：SET NX 加过期时间</h2>
+    <p>用 <em>SET key value NX PX 30000</em> 一条命令完成占用与租约，解决了“加锁成功但设置过期失败”的原子性问题。但它没有解决业务执行时间超过租约的问题：锁自动释放后，两个持有者会同时认为自己持有锁。</p>
+
+    <h2>第二代：看门狗续期</h2>
+    <p>看门狗在租约过半时自动续期，并要求释放锁时校验持有者标识。续期把“执行时间不可预测”与“租约固定”解耦，代价是进程崩溃后最多等一个租约周期。</p>
+
+    <h2>第三代：Redlock 的争议</h2>
+    <p>Redlock 在多个独立 Redis 实例上多数派加锁，试图摆脱单点与时钟漂移。反对意见认为它依赖各节点时钟近似同步，在严重停顿时仍可能被两个客户端同时持有。工程结论通常是：<em>宁可接受悲观锁的延迟，也不要依赖跨节点的时钟假设</em>。</p>
+
+    <h2>检索用素材</h2>
+    <p>这一段专门留给中文全文检索：术语包括幂等、可重入、租约、续期、栅栏令牌、脑裂、时钟漂移、多数派。</p>
+    <p>长句样本：当客户端在释放锁之前发生长时间 GC 停顿，恢复后它手里的锁可能已经过期，这正是栅栏令牌需要解决的问题。</p>
+    <div class="hidden-tech">隐藏技术节点：这段文本不应进入索引。</div>
+    <script>
+      // 这段脚本内容不应进入检索索引。
+      const notIndexedTerm = '脚本里的秘密词条';
+      console.log(notIndexedTerm);
+    </script>
+  </main>
+</body>
+</html>

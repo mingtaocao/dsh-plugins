@@ -1,0 +1,40 @@
+{
+  "name": "dsh-html-library",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first HTML knowledge library for DSH: sidebar entry, style-faithful preview, Chinese full-text search, favorites and tags. · 本地优先的 HTML 知识库：左侧栏入口、原样预览、中文检索、收藏与标签。",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib",
+    "locale",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "parse5": "^8.1.1",
+    "postcss": "^8.5.32",
+    "postcss-value-parser": "^4.2.0"
+  }
+}

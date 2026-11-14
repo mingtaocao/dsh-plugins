@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="HTML library">
+  <defs>
+    <linearGradient id="dshl-cover" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3f6ad8"/>
+      <stop offset="1" stop-color="#23408f"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="52" height="52" rx="13" fill="url(#dshl-cover)"/>
+  <path d="M20 16h18.5L46 23.5V48H20z" fill="#f4f7ff"/>
+  <path d="M38.5 16v7.5H46z" fill="#c9d6f7"/>
+  <path d="M25 30h15M25 35h15M25 40h9" stroke="#3f6ad8" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20 16v32" stroke="#8fb0ef" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M48 27v21.5" stroke="#8fb0ef" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

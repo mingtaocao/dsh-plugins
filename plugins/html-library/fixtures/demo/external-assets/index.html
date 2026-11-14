@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Agent Harness 设计速览</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="masthead">
+      <div class="kicker">Runtime note</div>
+      <h1>Agent Harness 设计速览</h1>
+      <p class="subtitle">会话日志是唯一事实来源，插件是围绕它生长的投影。</p>
+      <div class="badges"><span>DSH</span><span>Runtime</span><span>Tools</span></div>
+    </header>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>1. 会话日志</h2>
+        <p>每一次模型请求、工具调用与结果都先落盘，再投影成界面。fork、resume、replay 都从日志推导，而不是从内存状态猜测。</p>
+      </article>
+      <article class="panel">
+        <h2>2. 投影</h2>
+        <p>插件不自己订阅事件重扫整个会话，而是注册纯函数的 projection，按事件增量折叠，引用不变就自动跳过重渲染。</p>
+      </article>
+      <article class="panel">
+        <h2>3. 扩展点</h2>
+        <p>能不加工具就不加工具：先用 restrict 收窄，再用 guard 拒绝，最后才考虑 waterfall 改写。</p>
+      </article>
+    </section>
+
+    <figure class="diagram">
+      <img src="./assets/architecture.svg" alt="会话日志、投影与界面层的关系图" width="720" height="240" />
+      <figcaption>图 1：日志 → 投影 → Slot 渲染，三层各自可替换。</figcaption>
+    </figure>
+
+    <section class="panel wide">
+      <h2>为什么阅读器要独立成页</h2>
+      <p>知识库是跨会话的长期资产：收藏、标签和阅读位置不随某个会话关闭而消失。因此它注册在左侧栏的全局入口上，而不是挂在单次会话的右侧栏。</p>
+      <p class="note">外部样式、图片与字体都从原始目录按相对路径加载，HTML 不做任何重写。</p>
+    </section>
+
+    <footer class="foot">dsh-html-library · 样式保真测试样本</footer>
+  </div>
+</body>
+</html>

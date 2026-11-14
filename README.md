@@ -2,13 +2,13 @@
 
 个人开发与维护的 DSH 插件集合。采用单仓库、多插件（Monorepo）管理。
 
-> 当前状态：Task Manager 已有开发预览源码及自动化测试；完整宿主界面验收尚未通过。
+> 当前状态：HTML Library 与 Task Manager 均已有开发预览源码及自动化测试；完整宿主界面验收尚未通过。
 
 ## 插件
 
 | 插件 | 目录 | 目标 | 状态 |
 | --- | --- | --- | --- |
-| HTML Library | [plugins/html-library](plugins/html-library/README.md) | 管理、阅读本地 HTML 知识文件 | 规划中 |
+| HTML Library | [plugins/html-library](plugins/html-library/README.md) | 本地 HTML 知识库：浏览阅读、中文检索、收藏与标签 | 开发预览，待真实宿主验收 |
 | Task Manager | [plugins/task-manager](plugins/task-manager/README.md) | 多项目任务、看板与四象限 | 开发预览，待 UI 验收 |
 
 ## 开发流程

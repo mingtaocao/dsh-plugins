@@ -1,0 +1,18 @@
+# HTML 知识库（dsh-html-library）—— 本 bundle 贡献的配置层。
+#
+# 只有一段：插入插件自己的 loader 行。
+# `id` 是行标识，profile 的 cordis.patch.yml 可以用它做定向覆盖
+# （改 config，或 `disabled: true` 停用）。注意 `config` 是**整体替换**而非深合并，
+# 覆盖时要把想保留的字段一并写全。
+- insert:
+    - id: html-library
+      name: 'dsh-html-library'
+      config:
+        # 初始知识目录（绝对路径）。只在第一次启动、还没有保存过目录时用作种子；
+        # 之后以界面里的「添加 / 移除目录」为准（保存在 $DSH_HOME/dsh-html-library/library.json）。
+        roots: []
+        # 扫描时额外排除的相对路径通配符，例如 ['**/draft/**', '*.bak.html']。
+        # 默认已经排除 .git、node_modules、缓存目录等。
+        exclude: []
+        # 自动增量扫描间隔（毫秒）。目录为空时不做任何事。
+        watchIntervalMs: 5000
