@@ -2,14 +2,14 @@
 
 个人开发与维护的 DSH 插件集合。采用单仓库、多插件（Monorepo）管理。
 
-> 当前状态：仓库结构初始化中。插件入口、配置和构建方案须以实际 DSH 官方接口为准，尚未验证可运行。
+> 当前状态：Task Manager 已有开发预览源码及自动化测试；完整宿主界面验收尚未通过。
 
 ## 插件
 
 | 插件 | 目录 | 目标 | 状态 |
 | --- | --- | --- | --- |
 | HTML Library | [plugins/html-library](plugins/html-library/README.md) | 管理、阅读本地 HTML 知识文件 | 规划中 |
-| Task Manager | [plugins/task-manager](plugins/task-manager/README.md) | 多项目任务、看板与四象限 | 规划中 |
+| Task Manager | [plugins/task-manager](plugins/task-manager/README.md) | 多项目任务、看板与四象限 | 开发预览，待 UI 验收 |
 
 ## 开发流程
 
@@ -19,4 +19,4 @@
 
 ## 声明
 
-本仓库当前只包含插件工作区骨架，不提供可安装包。未添加开源许可证；公开可见不等于授权复用。
+Task Manager 可从插件目录在测试 Profile 加载，当前不提供已验收发布包。未添加开源许可证；公开可见不等于授权复用。
