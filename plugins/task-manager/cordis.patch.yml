@@ -1,0 +1,3 @@
+- insert:
+    - id: mingtaocao-task-manager
+      name: '@mingtaocao/dsh-task-manager'

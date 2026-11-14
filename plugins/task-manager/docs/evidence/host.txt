@@ -1,0 +1,8 @@
+PASS: parent/subtask state, board/matrix independence, export/preview and anonymous rejection
+PASS: real authenticated Host API and durable task snapshot
+PASS: real DSH authenticated index; plugin present
+PASS: real DSH authenticated index; plugin absent
+PASS: parent/subtask state, board/matrix independence, export/preview and anonymous rejection
+PASS: real authenticated Host API and durable task snapshot
+PASS: real DSH authenticated index; plugin present
+Host smoke PASS. Browser rendering and lifecycle effects still require V-001.

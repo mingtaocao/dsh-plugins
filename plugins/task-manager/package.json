@@ -1,0 +1,47 @@
+{
+  "name": "@mingtaocao/dsh-task-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale",
+    "icon.svg",
+    "README.md",
+    "src",
+    "docs"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-connection"
+      ]
+    }
+  },
+  "scripts": {
+    "check": "node --check index.js && node --check client.js && node --check src/core.js",
+    "test": "node --test tests/core.test.js",
+    "test:host": "node tests/host-smoke.mjs"
+  },
+  "engines": {
+    "node": ">=24.9.0"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  }
+}
