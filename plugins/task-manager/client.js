@@ -12,6 +12,8 @@ window.__ModuleLoader__.load({
       list: "列表",
       board: "看板",
       matrix: "四象限",
+      views: "视图",
+      navigation: "任务导航",
       all: "所有项目",
       projects: "项目",
       archived: "已归档",
@@ -39,7 +41,6 @@ window.__ModuleLoader__.load({
       urgent: "紧急",
       todo: "待办",
       doing: "进行中",
-      blocked: "阻塞",
       done: "完成",
       low: "低",
       normal: "普通",
@@ -79,6 +80,18 @@ window.__ModuleLoader__.load({
       inherited: "象限与项目跟随父任务",
       retry: "重试",
       chooseFile: "选择 JSON 文件",
+      taskActions: "任务操作",
+      moreActions: "更多操作",
+      projectMenu: "项目菜单",
+      viewArchived: "查看归档项目",
+      activeProjects: "返回活动项目",
+      noArchivedProjects: "暂无归档项目",
+      noActiveProjects: "暂无活动项目",
+      quadrant: "象限",
+      q1Short: "重要 · 紧急",
+      q2Short: "重要 · 不急",
+      q3Short: "紧急 · 不重要",
+      q4Short: "不急 · 不重要",
     };
     const en = {
       skippedArchives: "Skipped archive tasks",
@@ -88,6 +101,8 @@ window.__ModuleLoader__.load({
       list: "List",
       board: "Board",
       matrix: "Matrix",
+      views: "Views",
+      navigation: "Task navigation",
       all: "All projects",
       projects: "Projects",
       archived: "Archived",
@@ -116,7 +131,6 @@ window.__ModuleLoader__.load({
       urgent: "Urgent",
       todo: "To do",
       doing: "In progress",
-      blocked: "Blocked",
       done: "Done",
       low: "Low",
       normal: "Normal",
@@ -156,9 +170,114 @@ window.__ModuleLoader__.load({
       inherited: "Project and quadrant follow the parent task",
       retry: "Retry",
       chooseFile: "Choose JSON file",
+      taskActions: "Task actions",
+      moreActions: "More actions",
+      projectMenu: "Project menu",
+      viewArchived: "View archived projects",
+      activeProjects: "Back to active projects",
+      noArchivedProjects: "No archived projects",
+      noActiveProjects: "No active projects",
+      quadrant: "Quadrant",
+      q1Short: "Important · urgent",
+      q2Short: "Important · not urgent",
+      q3Short: "Urgent · not important",
+      q4Short: "Not urgent · not important",
     };
-    const css = `.mtt{height:100%;min-height:0;display:flex;flex-direction:column;font-family:inherit;font-size:14px;line-height:1.5;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base)}.mtt *{box-sizing:border-box}.mtt button,.mtt input,.mtt select,.mtt textarea{font:inherit;color:inherit;border:.5px solid var(--dsw-alias-border-l3);border-radius:6px;background:var(--dsw-alias-bg-base);padding:6px 9px}.mtt button{cursor:pointer}.mtt button:hover,.mtt button[aria-pressed=true]{background:var(--dsw-alias-interactive-bg-hover)}.mtt button:disabled{opacity:.55;cursor:default}.mtt :focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}.mtt-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:18px 22px;border-bottom:.5px solid var(--dsw-alias-border-l3)}.mtt h1{font-size:20px;margin:0 auto 0 0}.mtt h2{font-size:15px;margin:0}.mtt h3{font-size:14px;margin:0}.mtt-body{display:flex;flex:1;min-height:0}.mtt-projects{width:205px;flex-shrink:0;overflow:auto;padding:16px 12px;border-right:.5px solid var(--dsw-alias-border-l3)}.mtt-projects>button{display:block;width:100%;text-align:left;margin-bottom:5px}.mtt-main{flex:1;min-width:0;display:flex;flex-direction:column}.mtt-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px 18px}.mtt-tools input{min-width:150px;flex:1}.mtt-content{flex:1;min-height:0;overflow:auto;padding:0 18px 20px}.mtt-columns{height:100%;grid-template-rows:minmax(0,1fr);display:grid;grid-template-columns:repeat(4,minmax(210px,1fr));gap:12px;min-height:200px}.mtt-matrix{grid-template-rows:repeat(2,minmax(160px,1fr));min-height:360px;grid-template-columns:repeat(2,minmax(230px,1fr))}.mtt-group{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l3);border-radius:10px;padding:12px;min-height:0;overflow-y:auto;overscroll-behavior:contain}.mtt-group>h2{margin-bottom:12px}.mtt [data-drop=true]{outline:1px dashed var(--dsw-alias-brand-primary);outline-offset:-2px}.mtt-card{border:.5px solid var(--dsw-alias-border-l3);border-radius:8px;background:var(--dsw-alias-bg-base);padding:12px;margin-bottom:9px;overflow-wrap:anywhere}.mtt-row{display:flex;gap:7px;align-items:center}.mtt-row.wrap{flex-wrap:wrap}.mtt-task-title{border:0!important;padding:0!important;background:none!important;text-align:left;flex:1;min-width:0}.mtt-done .mtt-task-title{text-decoration:line-through;color:var(--dsw-alias-label-tertiary)}.mtt-meta{font-size:12px;color:var(--dsw-alias-label-secondary);margin:6px 0}.mtt-card select{max-width:100%;font-size:12px}.mtt-child{margin-top:8px;padding-left:12px;border-left:.5px solid var(--dsw-alias-border-l3)}.mtt-detail{width:340px;flex-shrink:0;border-left:.5px solid var(--dsw-alias-border-l3);padding:18px;overflow:auto}.mtt label.field{display:flex;flex-direction:column;gap:5px;margin:12px 0}.mtt textarea{resize:vertical;min-height:90px;width:100%}.mtt-check{display:flex;gap:6px;align-items:center}.mtt-message{padding:8px 20px;color:var(--dsw-alias-label-secondary)}.mtt-error{color:var(--dsw-alias-state-error-primary)}.mtt-dialog{height:auto;display:block;max-height:90vh;overflow:auto;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base);border:.5px solid var(--dsw-alias-border-l2);border-radius:12px;padding:24px;max-width:560px;width:90vw}.mtt-dialog::backdrop{background:var(--dsw-alias-bg-layer-3);opacity:.7}.mtt-dialog pre{white-space:pre-wrap}.mtt-empty{padding:24px 0;color:var(--dsw-alias-label-tertiary)}@media(max-width:1050px){.mtt-projects{width:170px}.mtt-detail{position:absolute;right:0;top:0;bottom:0;max-width:95%;background:var(--dsw-alias-bg-base);z-index:2}.mtt-body{position:relative}}@media(max-width:650px){.mtt-projects{width:130px}.mtt-head{padding:12px}.mtt-matrix{grid-template-rows:repeat(2,minmax(160px,1fr));min-height:360px;grid-template-columns:1fr}.mtt-content{padding:0 10px 12px}}`;
-    const statuses = ["todo", "doing", "blocked", "done"];
+    const css = `.mtt{height:100%;min-height:0;display:flex;flex-direction:column;font-family:inherit;font-size:14px;line-height:1.5;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base)}.mtt *{box-sizing:border-box}.mtt button,.mtt input,.mtt select,.mtt textarea{font:inherit;color:inherit;border:.5px solid var(--dsw-alias-border-l3);border-radius:6px;background:var(--dsw-alias-bg-base);padding:6px 9px}.mtt button{cursor:pointer}.mtt button:hover,.mtt button[aria-pressed=true]{background:var(--dsw-alias-interactive-bg-hover)}.mtt button:disabled{opacity:.55;cursor:default}.mtt :focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}.mtt-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:18px 22px;border-bottom:.5px solid var(--dsw-alias-border-l3)}.mtt h1{font-size:20px;margin:0 auto 0 0}.mtt h2{font-size:15px;margin:0}.mtt h3{font-size:14px;margin:0}.mtt-body{display:flex;flex:1;min-height:0}.mtt-projects{width:205px;flex-shrink:0;overflow:auto;padding:16px 12px;border-right:.5px solid var(--dsw-alias-border-l3)}.mtt-projects button{display:block;width:100%;text-align:left;margin-bottom:5px}.mtt-main{flex:1;min-width:0;display:flex;flex-direction:column}.mtt-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px 18px}.mtt-tools input{min-width:150px;flex:1}.mtt-content{flex:1;min-height:0;overflow:auto;padding:0 18px 20px}.mtt-columns{height:100%;grid-template-rows:minmax(0,1fr);display:grid;grid-template-columns:repeat(3,minmax(210px,1fr));gap:12px;min-height:200px}.mtt-matrix{grid-template-rows:repeat(2,minmax(160px,1fr));min-height:360px;grid-template-columns:repeat(2,minmax(230px,1fr))}.mtt-group{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l3);border-radius:10px;padding:12px;min-height:0;overflow-y:auto;overscroll-behavior:contain}.mtt-group>h2{margin-bottom:12px}.mtt [data-drop=true]{outline:1px dashed var(--dsw-alias-brand-primary);outline-offset:-2px}.mtt-card{border:.5px solid var(--dsw-alias-border-l3);border-radius:8px;background:var(--dsw-alias-bg-base);padding:12px;margin-bottom:9px;overflow-wrap:anywhere}.mtt-row{display:flex;gap:7px;align-items:center}.mtt-row.wrap{flex-wrap:wrap}.mtt-task-title{border:0!important;padding:0!important;background:none!important;text-align:left;flex:1;min-width:0}.mtt-done .mtt-task-title{text-decoration:line-through;color:var(--dsw-alias-label-tertiary)}.mtt-meta{font-size:12px;color:var(--dsw-alias-label-secondary);margin:6px 0}.mtt-card select{max-width:100%;font-size:12px}.mtt-child{margin-top:8px;padding-left:12px;border-left:.5px solid var(--dsw-alias-border-l3)}.mtt-detail{width:340px;flex-shrink:0;border-left:.5px solid var(--dsw-alias-border-l3);padding:18px;overflow:auto}.mtt label.field{display:flex;flex-direction:column;gap:5px;margin:12px 0}.mtt textarea{resize:vertical;min-height:90px;width:100%}.mtt-check{display:flex;gap:6px;align-items:center}.mtt-message{padding:8px 20px;color:var(--dsw-alias-label-secondary)}.mtt-error{color:var(--dsw-alias-state-error-primary)}.mtt-dialog{height:auto;display:block;max-height:90vh;overflow:auto;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base);border:.5px solid var(--dsw-alias-border-l2);border-radius:12px;padding:24px;max-width:560px;width:90vw}.mtt-dialog::backdrop{background:var(--dsw-alias-bg-layer-3);opacity:.7}.mtt-dialog pre{white-space:pre-wrap}.mtt-empty{padding:24px 0;color:var(--dsw-alias-label-tertiary)}@media(max-width:1050px){.mtt-projects{width:170px}.mtt-detail{position:absolute;right:0;top:0;bottom:0;max-width:95%;background:var(--dsw-alias-bg-base);z-index:2}.mtt-body{position:relative}}@media(max-width:650px){.mtt-projects{width:130px}.mtt-head{padding:12px}.mtt-matrix{grid-template-rows:repeat(2,minmax(160px,1fr));min-height:360px;grid-template-columns:1fr}.mtt-content{padding:0 10px 12px}}`;
+    const cardCss = `
+      .mtt{--mt-accent:var(--dsw-alias-brand-primary,#6558d9);--mt-muted:var(--dsw-alias-label-secondary,#737784);--mt-line:var(--dsw-alias-border-l3,#e6e8ef);--mt-surface:var(--dsw-alias-bg-base,#fff);--mt-tint:color-mix(in srgb,var(--mt-muted) 5%,var(--mt-surface))}
+      .mtt-body{position:relative}
+      .mtt-main{container-type:inline-size}
+      .mtt-projects{display:flex;flex-direction:column;overflow:hidden;width:176px;padding:12px}
+      .mtt-projects button{border:0;border-radius:6px;background:transparent;padding:7px 10px}
+      .mtt-projects button[aria-pressed=true]{background:color-mix(in srgb,var(--mt-accent) 9%,var(--mt-surface));color:var(--mt-accent);font-weight:600}
+      .mtt-views{flex-shrink:0;padding-bottom:10px;margin-bottom:8px;border-bottom:1px solid var(--mt-line)}
+      .mtt-views>button{display:flex;align-items:center;gap:10px}
+      .mtt-views .mtt-icon{width:15px;height:15px}
+      .mtt-project-list{min-height:0;overflow:auto;scrollbar-width:thin}
+      .mtt-project-list-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px 4px 10px}
+      .mtt-project-list-heading>h2{font-size:11px;font-weight:500;color:var(--mt-muted)}
+      .mtt-projects .mtt-archive-return{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--mt-muted)}
+      .mtt-archive-return>.mtt-icon{transform:rotate(180deg)}
+      .mtt-head{padding:11px 20px;gap:8px}
+      .mtt-head h1{font-size:17px;letter-spacing:-.3px}
+      .mtt-project-heading{display:flex;align-items:center;gap:6px;padding:8px 20px 0;min-width:0}
+      .mtt-project-heading>h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500;color:var(--mt-muted)}
+      .mtt-tools{padding:9px 20px;gap:8px}
+      .mtt-tools input:not([type=checkbox]){border-radius:7px;padding:7px 10px}
+      .mtt-tools input[type=checkbox]{min-width:0;flex:none;margin:0;width:13px;height:13px}
+      .mtt-tools .mtt-check{font-size:12px;white-space:nowrap}
+      .mtt-tools select,.mtt-tools button{font-size:12px}
+      .mtt-message:empty{display:none}
+      .mtt-message{font-size:11px;padding:5px 20px}
+      .mtt-content{padding:5px 20px 16px}
+      .mtt-columns{grid-template-columns:repeat(3,minmax(170px,1fr));gap:12px}
+      .mtt-matrix{grid-template-columns:repeat(2,minmax(230px,1fr))}
+      .mtt-group{background:var(--mt-tint);border:0;border-radius:10px;padding:8px;scrollbar-width:thin}
+      .mtt-group>h2{font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px;padding:3px 4px 9px;margin:0;color:var(--mt-muted)}
+      .mtt-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:4px;background:color-mix(in srgb,var(--mt-muted) 8%,transparent);font-size:10px;font-variant-numeric:tabular-nums}
+      .mtt-card{position:relative;padding:8px 10px;margin:0 0 6px;border:1px solid color-mix(in srgb,var(--mt-line) 75%,transparent);border-radius:7px;background:var(--mt-surface);box-shadow:0 1px 2px #00000003;transition:border-color .15s;overflow-wrap:anywhere}
+      .mtt-card:hover{border-color:color-mix(in srgb,var(--mt-muted) 30%,var(--mt-line))}
+      .mtt-card-top{display:flex;align-items:flex-start;gap:8px;min-height:20px}
+      .mtt-card input[type=checkbox]{appearance:none;flex-shrink:0;width:14px;height:14px;min-width:14px;padding:0;margin:3px 0 0;border:1.4px solid color-mix(in srgb,var(--mt-muted) 55%,transparent);border-radius:4px;background:transparent;cursor:pointer;display:grid;place-content:center}
+      .mtt-card input[type=checkbox]:checked{background:var(--mt-accent);border-color:var(--mt-accent)}
+      .mtt-card input[type=checkbox]:checked::after{content:'';width:6px;height:3px;border-left:1.4px solid white;border-bottom:1.4px solid white;transform:translateY(-1px) rotate(-45deg)}
+      .mtt-task-title{font-weight:400;line-height:20px;font-size:13px;overflow-wrap:anywhere}
+      .mtt-card-top>.mtt-task-title{padding-right:20px!important}
+      .mtt-card .mtt-task-title:hover{color:var(--mt-accent)}
+      .mtt-done>.mtt-card-top>.mtt-task-title{color:var(--mt-muted)}
+      .mtt-icon{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
+      .mtt button.mtt-menu-trigger{display:inline-grid;place-items:center;flex-shrink:0;width:28px;height:28px;padding:0;margin:0;border:0;border-radius:5px;background:transparent;color:var(--mt-muted);cursor:pointer}
+      .mtt button.mtt-menu-trigger:hover{background:var(--mt-tint)}
+      .mtt-menu-trigger .mtt-icon{width:18px;height:18px}
+      .mtt button.mtt-project-menu{width:24px;height:24px}
+      .mtt button.mtt-more{position:absolute;right:5px;top:6px;width:24px;height:24px;background:var(--mt-surface);opacity:0;transition:opacity .15s}
+      .mtt-card:hover .mtt-more,.mtt-card:focus-within .mtt-more,.mtt-more[aria-expanded=true]{opacity:1}
+      .mtt-card-secondary{display:flex;align-items:center;flex-wrap:wrap;gap:3px 8px;margin:3px 0 0 22px;font-size:10px;line-height:16px;color:var(--mt-muted)}
+      .mtt-card-secondary:empty{display:none}
+      .mtt-card-secondary>span{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+      .mtt-card-secondary .mtt-icon{width:11px;height:11px}
+      .mtt-card-secondary>.mtt-project-tag{display:block;overflow:hidden;max-width:160px;text-overflow:ellipsis;white-space:nowrap}
+      .mtt-project-tag>.mtt-icon{margin-right:4px;vertical-align:-1px}
+      .mtt-priority[data-priority=high]{color:light-dark(#b86a28,#e1af75)}
+      .mtt-chip{position:relative;display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:0 3px;border-radius:3px;font-size:10px;line-height:16px;color:var(--mt-muted);background:transparent}
+      .mtt-chip:hover{background:color-mix(in srgb,var(--mt-muted) 9%,var(--mt-surface))}
+      .mtt-chip:focus-within{outline:2px solid var(--mt-accent);outline-offset:2px}
+      .mtt-chip select{position:absolute;inset:0;opacity:0;width:100%;height:100%;padding:0;cursor:pointer}
+      .mtt-chip[data-status=doing],.mtt-chip[data-quadrant=q2]{color:var(--mt-accent)}
+      .mtt-chip[data-status=done]{color:light-dark(#43866b,#81bd9f)}
+      .mtt-chip[data-quadrant=q1]{color:light-dark(#b15b58,#e69d98)}
+      .mtt-status-dot{width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+      .mtt-chip .mtt-icon{width:10px;height:10px}
+      .mtt-subtasks{margin-left:auto;min-width:0}
+      .mtt-subtasks:first-child{margin-left:0}
+      .mtt-subtasks>summary{list-style:none;display:flex;align-items:center;gap:3px;width:fit-content;max-width:100%;color:var(--mt-muted);font-size:10px;line-height:16px;cursor:pointer;border-radius:3px}
+      .mtt-subtasks>summary::-webkit-details-marker{display:none}
+      .mtt-subtasks>summary>.mtt-icon{width:10px;height:10px;transition:transform .15s}
+      .mtt-subtasks[open]{flex-basis:100%;margin-left:0}
+      .mtt-subtasks[open]>summary>.mtt-icon{transform:rotate(90deg)}
+      .mtt-subtasks>.mtt-child{padding:3px 0 0 10px;margin-top:4px;gap:7px}
+      .mtt-card .mtt-child .mtt-task-title{font-size:12px;font-weight:400;line-height:20px}
+      .mtt-card .mtt-child:not(.mtt-done) .mtt-task-title{text-decoration:none;color:inherit}
+      .mtt-card .mtt-child.mtt-done .mtt-task-title{color:var(--mt-muted);text-decoration:line-through}
+      .mtt-card .mtt-child input[type=checkbox]{width:12px;height:12px;min-width:12px;margin-top:0}
+      .mtt-action-menu:not(:popover-open){display:none}
+      .mtt-action-menu{height:auto;display:block;position:fixed;inset:auto;margin:0;width:190px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:5px;border:1px solid var(--mt-line);border-radius:8px;background:var(--mt-surface);color:var(--dsw-alias-label-primary);box-shadow:0 8px 24px #00000016}
+      .mtt-menu-fields{padding:4px 7px 8px;border-bottom:1px solid var(--mt-line);margin-bottom:4px}
+      .mtt-menu-field{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;margin:3px 0}
+      .mtt-action-menu::backdrop{background:transparent}
+      .mtt-action-menu>button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;margin:0;border:0;background:transparent;border-radius:5px;font-size:12px;text-align:left}
+      .mtt-action-menu>button:hover{background:var(--mt-tint)}
+      .mtt-view-list .mtt-content>.mtt-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px}
+      .mtt-view-list .mtt-card-top{grid-column:1;grid-row:1}
+      .mtt-view-list .mtt-card-secondary{grid-column:2;grid-row:1;margin:0;padding-right:24px;align-self:center}
+      .mtt-view-list .mtt-card:has(.mtt-subtasks[open]) .mtt-card-secondary{grid-column:1 / -1;grid-row:2;margin:3px 0 0 22px;padding-right:0}
+      @container(max-width:560px){.mtt-view-list .mtt-content>.mtt-card{display:block}.mtt-view-list .mtt-card-secondary{margin:3px 0 0 22px;padding-right:0}}
+      @media(hover:none){.mtt button.mtt-more{opacity:1}}
+      @media(prefers-reduced-motion:reduce){.mtt-card,.mtt-more,.mtt-subtasks>summary>.mtt-icon{transition:none}}
+      @container(max-width:560px){.mtt-columns:not(.mtt-matrix){grid-template-columns:repeat(3,180px)}.mtt-matrix{grid-template-columns:1fr;grid-template-rows:auto;height:auto;min-height:100%}.mtt-matrix>.mtt-group{min-height:180px}}
+    `;
+    const statuses = ["todo", "doing", "done"];
     const quads = [
       [true, true, "q1"],
       [true, false, "q2"],
@@ -169,6 +288,62 @@ window.__ModuleLoader__.load({
       quads.find((q) => q[0] === t.important && q[1] === t.urgent)[2];
     function Button({ children, ...props }) {
       return h("button", { type: "button", ...props }, children);
+    }
+    function Icon({ name }) {
+      const paths = {
+        chevron: "m6 4 4 4-4 4",
+        flag: "M4 14V2h8l-2 3 2 3H4",
+        up: "M8 13V3m-4 4 4-4 4 4",
+        down: "M8 3v10m-4-4 4 4 4-4",
+        detail: "M3 2h10v12H3zM6 5h4M6 8h4M6 11h2",
+        calendar: "M3 4h10v10H3zM5 2v4m6-4v4M3 8h10",
+        project: "M2 4h5l1 2h6v7H2z",
+        list: "M3 4h1m3 0h6M3 8h1m3 0h6M3 12h1m3 0h6",
+        board: "M2 3h12v10H2zM6 3v10m4-10v10",
+        matrix: "M2 2h12v12H2zM8 2v12M2 8h12",
+        download: "M8 2v8m-3-3 3 3 3-3M3 11v3h10v-3",
+        upload: "M8 10V2m-3 3 3-3 3 3M3 11v3h10v-3",
+        archive: "M2 2h12v4H2zM3 6v8h10V6M6 9h4",
+        plus: "M8 3v10M3 8h10",
+        edit: "m10 2 4 4-8 8H2v-4zM8 4l4 4",
+        trash: "M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 7v4m2-4v4",
+      };
+      return h("svg", {
+        className: "mtt-icon", viewBox: "0 0 16 16", fill: "none",
+        stroke: "currentColor", strokeWidth: 1.4,
+        strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true,
+      }, name === "more"
+        ? [4, 8, 12].map((cx) => h("circle", { key: cx, cx, cy: 8, r: 1, fill: "currentColor", stroke: "none" }))
+        : h("path", { d: paths[name] }));
+    }
+    function ActionMenu({ label, children, buttonClass = "mtt-more", disabled = false }) {
+      const id = React.useId(), menu = React.useRef(), trigger = React.useRef();
+      const place = () => {
+        const rect = trigger.current.getBoundingClientRect();
+        const height = menu.current.offsetHeight || 160;
+        const width = menu.current.offsetWidth || 190;
+        menu.current.style.left = Math.max(8, Math.min(rect.right - width, innerWidth - width - 8)) + "px";
+        menu.current.style.top = Math.max(8, Math.min(rect.bottom + 5, innerHeight - height - 8)) + "px";
+      };
+      return h(React.Fragment, null,
+        h("button", {
+          type: "button", ref: trigger, className: "mtt-menu-trigger " + buttonClass,
+          "aria-label": label, title: label, disabled,
+          popoverTarget: id,
+          onClick: place,
+        }, h(Icon, { name: "more" })),
+        h("div", {
+          ref: menu, id, popover: "auto", className: "mtt mtt-action-menu",
+          role: "group", "aria-label": label,
+          onToggle: (e) => {
+            trigger.current?.setAttribute("aria-expanded", String(e.newState === "open"));
+            if (e.newState === "open") place();
+          },
+          onClick: (e) => {
+            if (e.target.closest("button:not(:disabled)")) menu.current.hidePopover();
+          },
+        }, children),
+      );
     }
     function Field({ label, children }) {
       return h(
@@ -307,13 +482,19 @@ window.__ModuleLoader__.load({
       }
       const task = state?.tasks.find((task) => task.id === selected);
       function open(id) {
-        if (detailDirty.current && !window.confirm(t("discard"))) return;
+        if (detailDirty.current && !window.confirm(t("discard"))) return false;
         detailDirty.current = false;
         detailRevision.current = snapshot.state?.revision;
         draftKey.current = snapshot.state?.tasks.find(
           (x) => x.id === id,
         )?.updatedAt;
         setSelected(id);
+        return true;
+      }
+      function toggleArchived() {
+        if (!open(null)) return;
+        setArchived((value) => !value);
+        setScope("all");
       }
       function sort(items, id, direction, sortView) {
         const ids = items.map((x) => x.id),
@@ -332,168 +513,103 @@ window.__ModuleLoader__.load({
         change("task.drop", { id, view, beforeId, ...group });
       }
       function quadrantSelect(item) {
-        return h(
-          "select",
-          {
-            "aria-label": t("move"),
-            value: qkey(item),
-            disabled: busy || archived,
+        return h("span", {
+          className: "mtt-chip", "data-quadrant": qkey(item), title: t(qkey(item)),
+        },
+          h(Icon, { name: "flag" }),
+          h("span", { "aria-hidden": true }, t(qkey(item) + "Short")),
+          h("select", {
+            "aria-label": t("move"), value: qkey(item), disabled: busy || archived,
             onChange: (e) => {
               const q = quads.find((q) => q[2] === e.target.value);
-              change("task.update", {
-                id: item.id,
-                important: q[0],
-                urgent: q[1],
-              });
+              change("task.update", { id: item.id, important: q[0], urgent: q[1] });
             },
-          },
-          quads.map((q) => h("option", { key: q[2], value: q[2] }, t(q[2]))),
+          }, quads.map((q) => h("option", { key: q[2], value: q[2] }, t(q[2])))),
         );
       }
+      function statusSelect(item) {
+        return h("span", { className: "mtt-chip", "data-status": item.status },
+          h("span", { className: "mtt-status-dot", "aria-hidden": true }),
+          h("span", { "aria-hidden": true }, t(item.status)),
+          h("select", {
+            "aria-label": t("status"), value: item.status, disabled: busy || archived,
+            onChange: (e) => change("task.update", { id: item.id, status: e.target.value }),
+          }, statuses.map((s) => h("option", { key: s, value: s }, t(s)))),
+        );
+      }
+      const orderKey = { list: "listOrder", board: "boardOrder", matrix: "matrixOrder" }[view];
+      const orderGroupKey = (item) => JSON.stringify([
+        item.projectId, view === "board" ? item.status : view === "matrix" ? qkey(item) : "list",
+      ]);
+      const orderGroups = new Map();
+      for (const item of roots) {
+        const key = orderGroupKey(item);
+        if (!orderGroups.has(key)) orderGroups.set(key, []);
+        orderGroups.get(key).push(item);
+      }
+      for (const items of orderGroups.values()) items.sort((a, b) => a[orderKey] - b[orderKey]);
       function card(item, group = {}) {
         const subs = children(item.id),
+          completed = subs.filter((s) => s.status === "done").length,
           project = state.projects.find((p) => p.id === item.projectId);
-        return h(
-          "article",
-          {
-            key: item.id,
-            className: "mtt-card " + (item.status === "done" ? "mtt-done" : ""),
-            "data-task-id": item.id,
-            "data-drop": dragTarget === item.id,
-            onDragEnd: () => setDragTarget(null),
-            draggable: !busy && !archived,
-            onDragStart: (e) => {
-              e.dataTransfer.setData("text/x-mt-task", item.id);
-              e.dataTransfer.effectAllowed = "move";
-            },
-            onDragOver: (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setDragTarget(item.id);
-            },
-            onDrop: (e) => drop(e, group, item.id),
+        const siblings = orderGroups.get(orderGroupKey(item));
+        const position = siblings.findIndex((x) => x.id === item.id);
+        return h("article", {
+          key: item.id,
+          className: "mtt-card " + (item.status === "done" ? "mtt-done" : ""),
+          "data-task-id": item.id, "data-drop": dragTarget === item.id,
+          onDragEnd: () => setDragTarget(null), draggable: !busy && !archived,
+          onDragStart: (e) => {
+            if (e.target.closest("[popover]")) { e.preventDefault(); return; }
+            e.dataTransfer.setData("text/x-mt-task", item.id);
+            e.dataTransfer.effectAllowed = "move";
           },
-          h(
-            "div",
-            { className: "mtt-row" },
+          onDragOver: (e) => { e.preventDefault(); e.stopPropagation(); setDragTarget(item.id); },
+          onDrop: (e) => drop(e, group, item.id),
+        },
+          h("div", { className: "mtt-card-top" },
             h("input", {
-              type: "checkbox",
-              checked: item.status === "done",
-              disabled: busy || archived,
+              type: "checkbox", checked: item.status === "done", disabled: busy || archived,
               "aria-label": t(item.status === "done" ? "reopen" : "complete"),
-              onChange: (e) =>
-                change("task.update", {
-                  id: item.id,
-                  status: e.target.checked ? "done" : "todo",
-                }),
+              onChange: (e) => change("task.update", { id: item.id, status: e.target.checked ? "done" : "todo" }),
             }),
-            h(
-              Button,
-              { className: "mtt-task-title", onClick: () => open(item.id) },
-              item.title,
-            ),
-          ),
-          h(
-            "div",
-            { className: "mtt-meta" },
-            [
-              scope === "all" ? project?.name : null,
-              item.priority !== "normal" ? t(item.priority) : null,
-              item.dueDate,
-              subs.length
-                ? `${subs.filter((s) => s.status === "done").length}/${subs.length}`
-                : null,
-            ]
-              .filter(Boolean)
-              .join(" / "),
-          ),
-          h(
-            "div",
-            { className: "mtt-row wrap" },
-            h(
-              "select",
-              {
-                "aria-label": t("status"),
-                value: item.status,
-                disabled: busy || archived,
-                onChange: (e) =>
-                  change("task.update", {
-                    id: item.id,
-                    status: e.target.value,
-                  }),
-              },
-              statuses.map((s) => h("option", { key: s, value: s }, t(s))),
-            ),
-            quadrantSelect(item),
-          ),
-          h(
-            "div",
-            { className: "mtt-row", style: { marginTop: 7 } },
-            ...[-1, 1].map((d) =>
-              h(
-                Button,
-                {
-                  key: d,
-                  disabled: busy || archived,
-                  "aria-label": t(d < 0 ? "up" : "down"),
-                  onClick: () => {
-                    const key = {
-                      list: "listOrder",
-                      board: "boardOrder",
-                      matrix: "matrixOrder",
-                    }[view];
-                    const items = roots
-                      .filter(
-                        (x) =>
-                          x.projectId === item.projectId &&
-                          (view !== "board" || x.status === item.status) &&
-                          (view !== "matrix" || qkey(x) === qkey(item)),
-                      )
-                      .sort((a, b) => a[key] - b[key]);
-                    sort(items, item.id, d, view);
-                  },
-                },
-                d < 0 ? "↑" : "↓",
+            h(Button, { className: "mtt-task-title", title: item.title, onClick: () => open(item.id) }, item.title),
+            h(ActionMenu, { label: t("taskActions") + ": " + item.title },
+              h("div", { className: "mtt-menu-fields" },
+                h("label", { className: "mtt-menu-field" }, h("span", null, t("status")), statusSelect(item)),
+                h("label", { className: "mtt-menu-field" }, h("span", null, t("quadrant")), quadrantSelect(item)),
               ),
+              h(Button, { onClick: () => open(item.id) }, h(Icon, { name: "detail" }), t("details")),
+              ...[-1, 1].map((direction) => h(Button, {
+                key: direction,
+                disabled: busy || archived || (direction < 0 ? position === 0 : position === siblings.length - 1),
+                onClick: () => sort(siblings, item.id, direction, view),
+              }, h(Icon, { name: direction < 0 ? "up" : "down" }), t(direction < 0 ? "up" : "down"))),
             ),
           ),
-          subs.length
-            ? h(
-                "details",
-                null,
-                h(
-                  "summary",
-                  null,
-                  t("subtasks") +
-                    ` ${subs.filter((s) => s.status === "done").length}/${subs.length}`,
-                ),
-                subs.map((s) =>
-                  h(
-                    "div",
-                    { key: s.id, className: "mtt-child mtt-row" },
-                    h("input", {
-                      type: "checkbox",
-                      checked: s.status === "done",
-                      disabled: busy || archived,
-                      "aria-label": s.title,
-                      onChange: (e) =>
-                        change("task.update", {
-                          id: s.id,
-                          status: e.target.checked ? "done" : "todo",
-                        }),
-                    }),
-                    h(
-                      Button,
-                      {
-                        className: "mtt-task-title",
-                        onClick: () => open(s.id),
-                      },
-                      s.title,
-                    ),
-                  ),
-                ),
-              )
-            : null,
+          h("div", { className: "mtt-card-secondary" },
+            scope === "all" && project ? h("span", { className: "mtt-project-tag", title: project.name }, h(Icon, { name: "project" }), project.name) : null,
+            item.priority !== "normal" ? h("span", { className: "mtt-priority", "data-priority": item.priority }, t("priority") + " · " + t(item.priority)) : null,
+            item.dueDate ? h("span", { className: "mtt-due" }, h(Icon, { name: "calendar" }), item.dueDate) : null,
+            view !== "board" && item.status !== "todo" ? statusSelect(item) : null,
+            view !== "matrix" && qkey(item) !== "q4" ? quadrantSelect(item) : null,
+            subs.length ? h("details", { className: "mtt-subtasks" },
+              h("summary", { "aria-label": t("subtasks") + ` ${completed}/${subs.length}`, title: t("subtasks") },
+                h(Icon, { name: "chevron" }),
+                h("span", null, `${completed}/${subs.length}`),
+              ),
+              subs.map((s) => h("div", {
+                key: s.id, className: "mtt-child mtt-row " + (s.status === "done" ? "mtt-done" : ""),
+              },
+                h("input", {
+                  type: "checkbox", checked: s.status === "done", disabled: busy || archived,
+                  "aria-label": s.title,
+                  onChange: (e) => change("task.update", { id: s.id, status: e.target.checked ? "done" : "todo" }),
+                }),
+                h(Button, { className: "mtt-task-title", onClick: () => open(s.id) }, s.title),
+              )),
+            ) : null,
+          ),
         );
       }
       function group(label, items, changes) {
@@ -511,7 +627,7 @@ window.__ModuleLoader__.load({
             onDragLeave: () => setDragTarget(null),
             onDrop: (e) => drop(e, changes),
           },
-          h("h2", null, label + " " + items.length),
+          h("h2", null, label, h("span", { className: "mtt-count" }, items.length)),
           limited(
             items.sort((a, b) => a[key] - b[key]),
             view + label,
@@ -914,44 +1030,39 @@ window.__ModuleLoader__.load({
       };
       return h(
         "div",
-        { className: "mtt", "data-task-manager": "" },
-        h("style", null, css),
+        { className: "mtt mtt-view-" + view, "data-task-manager": "" },
+        h("style", null, css + cardCss),
         h(
           "header",
           { className: "mtt-head" },
-          h("h1", null, t("title")),
-          ["list", "board", "matrix"].map((v) =>
+          h("h1", null, t(view)),
+          h(ActionMenu, { label: t("moreActions"), buttonClass: "mtt-head-menu", disabled: busy },
             h(
               Button,
-              { key: v, "aria-pressed": view === v, onClick: () => setView(v) },
-              t(v),
+              {
+                disabled: busy || !state,
+                onClick: () =>
+                  run(async () => {
+                    const data = await api.call("export");
+                    const url = URL.createObjectURL(
+                      new Blob([JSON.stringify(data, null, 2)], {
+                        type: "application/json",
+                      }),
+                    );
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "dsh-tasks.json";
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  }),
+              },
+              h(Icon, { name: "download" }), t("export"),
             ),
-          ),
-          h(
-            Button,
-            {
-              disabled: busy || !state,
-              onClick: () =>
-                run(async () => {
-                  const data = await api.call("export");
-                  const url = URL.createObjectURL(
-                    new Blob([JSON.stringify(data, null, 2)], {
-                      type: "application/json",
-                    }),
-                  );
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "dsh-tasks.json";
-                  a.click();
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
-                }),
-            },
-            t("export"),
-          ),
-          h(
-            Button,
-            { disabled: busy, onClick: () => fileRef.current.click() },
-            t("import"),
+            h(
+              Button,
+              { disabled: busy, onClick: () => fileRef.current.click() },
+              h(Icon, { name: "upload" }), t("import"),
+            ),
           ),
           h("input", {
             type: "file",
@@ -994,43 +1105,54 @@ window.__ModuleLoader__.load({
           { className: "mtt-body" },
           h(
             "nav",
-            { className: "mtt-projects", "aria-label": t("projects") },
+            { className: "mtt-projects", "aria-label": t("navigation") },
             h(
-              Button,
-              {
-                "aria-pressed": scope === "all",
-                onClick: () => setScope("all"),
-              },
-              t("all"),
-            ),
-            projects.map((p) =>
-              h(
-                Button,
-                {
-                  key: p.id,
-                  "aria-pressed": scope === p.id,
-                  onClick: () => setScope(p.id),
-                },
-                p.name,
+              "div",
+              { className: "mtt-views", role: "group", "aria-label": t("views") },
+              ["list", "board", "matrix"].map((v) =>
+                h(
+                  Button,
+                  { key: v, "aria-pressed": view === v, onClick: () => setView(v) },
+                  h(Icon, { name: v }),
+                  t(v),
+                ),
               ),
             ),
             h(
-              Button,
-              { disabled: busy, onClick: () => setDialog({ kind: "project" }) },
-              t("newProject"),
-            ),
-            h(
-              "label",
-              { className: "mtt-check" },
-              h("input", {
-                type: "checkbox",
-                checked: archived,
-                onChange: (e) => {
-                  setArchived(e.target.checked);
-                  setScope("all");
+              "div",
+              { className: "mtt-project-list", role: "group", "aria-label": t("projects") },
+              h("div", { className: "mtt-project-list-heading" },
+                h("h2", null, t(archived ? "archived" : "projects")),
+                h(ActionMenu, { label: t("projectMenu"), buttonClass: "mtt-project-menu", disabled: busy },
+                  h(Button, { onClick: () => setDialog({ kind: "project" }) }, h(Icon, { name: "plus" }), t("newProject")),
+                  h(Button, {
+                    disabled: !archived && !state?.projects.some((p) => p.archivedAt),
+                    onClick: toggleArchived,
+                  }, h(Icon, { name: archived ? "project" : "archive" }), t(archived ? "activeProjects" : "viewArchived")),
+                ),
+              ),
+              archived ? h(Button, { className: "mtt-archive-return", onClick: toggleArchived },
+                h(Icon, { name: "chevron" }), t("activeProjects"),
+              ) : null,
+              h(
+                Button,
+                {
+                  "aria-pressed": scope === "all",
+                  onClick: () => setScope("all"),
                 },
-              }),
-              t("archived"),
+                t("all"),
+              ),
+              projects.map((p) =>
+                h(
+                  Button,
+                  {
+                    key: p.id,
+                    "aria-pressed": scope === p.id,
+                    onClick: () => setScope(p.id),
+                  },
+                  p.name,
+                ),
+              ),
             ),
           ),
           h(
@@ -1039,55 +1161,59 @@ window.__ModuleLoader__.load({
             current
               ? h(
                   "div",
-                  { className: "mtt-tools" },
+                  { className: "mtt-project-heading" },
                   h("h2", null, current.name),
-                  h(
-                    Button,
-                    {
-                      disabled: busy,
-                      onClick: () => setDialog({ kind: "rename" }),
-                    },
-                    t("rename"),
-                  ),
-                  h(
-                    Button,
-                    {
-                      disabled: busy,
-                      onClick: () =>
-                        change("project.update", {
-                          id: current.id,
-                          archived: !current.archivedAt,
-                        }),
-                    },
-                    t(current.archivedAt ? "restore" : "archive"),
-                  ),
-                  h(
-                    Button,
-                    {
-                      disabled: busy,
-                      onClick: () =>
-                        setDialog({ kind: "deleteProject", id: current.id }),
-                    },
-                    t("remove"),
-                  ),
-                  ...[-1, 1].map((d) =>
+                  h(ActionMenu, { label: t("projectMenu") + ": " + current.name, buttonClass: "mtt-project-menu", disabled: busy },
                     h(
                       Button,
                       {
-                        key: d,
                         disabled: busy,
-                        "aria-label": t(d < 0 ? "up" : "down"),
-                        onClick: () =>
-                          sort(
-                            [...state.projects].sort(
-                              (a, b) => a.order - b.order,
-                            ),
-                            current.id,
-                            d,
-                            "project",
-                          ),
+                        onClick: () => setDialog({ kind: "rename" }),
                       },
-                      d < 0 ? "↑" : "↓",
+                      h(Icon, { name: "edit" }), t("rename"),
+                    ),
+                    h(
+                      Button,
+                      {
+                        disabled: busy,
+                        onClick: async () => {
+                          if (!open(null)) return;
+                          const result = await change("project.update", {
+                            id: current.id, archived: !current.archivedAt,
+                          });
+                          if (result !== false) setScope("all");
+                        },
+                      },
+                      h(Icon, { name: "archive" }), t(current.archivedAt ? "restore" : "archive"),
+                    ),
+                    h(
+                      Button,
+                      {
+                        disabled: busy,
+                        onClick: () =>
+                          setDialog({ kind: "deleteProject", id: current.id }),
+                      },
+                      h(Icon, { name: "trash" }), t("remove"),
+                    ),
+                    ...[-1, 1].map((d) =>
+                      h(
+                        Button,
+                        {
+                          key: d,
+                          disabled: busy,
+                          "aria-label": t(d < 0 ? "up" : "down"),
+                          onClick: () =>
+                            sort(
+                              [...state.projects].sort(
+                                (a, b) => a.order - b.order,
+                              ),
+                              current.id,
+                              d,
+                              "project",
+                            ),
+                        },
+                        h(Icon, { name: d < 0 ? "up" : "down" }), t(d < 0 ? "up" : "down"),
+                      ),
                     ),
                   ),
                 )
@@ -1171,10 +1297,9 @@ window.__ModuleLoader__.load({
               "div",
               { className: "mtt-content" },
               !projects.length
-                ? h(
-                    Button,
-                    { onClick: () => setDialog({ kind: "project" }) },
-                    t("noProjects"),
+                ? h("div", { className: "mtt-empty" },
+                    h("p", null, t(archived ? "noArchivedProjects" : state?.projects.length ? "noActiveProjects" : "noProjects")),
+                    !archived ? h(Button, { onClick: () => setDialog({ kind: "project" }) }, t("newProject")) : null,
                   )
                 : view === "list"
                   ? roots.length

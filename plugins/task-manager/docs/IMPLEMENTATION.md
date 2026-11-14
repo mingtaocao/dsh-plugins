@@ -15,7 +15,15 @@
 
 官方定义：DSH `docs/subsystems/web-client.md`，`packages/client/ui-layout/src/client/index.ts`、`packages/client/ui-sidebar/src/client/contract/slots.ts`；已安装的 `dsh-storage-domain/lib/types/{index,spec,domain}.d.ts` 和 `dsh-client-connection/lib/types/rpc.d.ts`。
 
+## 移除阻塞状态
+
+2026-11-14 按用户要求只保留 todo/doing/done；看板改三列，移除阻塞文案、筛选项和样式。Host 启动时在注册接口前校验并持久化旧 blocked→todo 迁移，revision 递增一次，后续加载不重复迁移。保存失败中止启动。旧版原生备份走相同映射；新编辑和拖拽拒绝 blocked。
+
 ## 执行状态
+
+左侧导航调整：列表、看板、四象限入口统一放在项目列表上方，项目区域独立滚动；顶部显示当前视图标题，导入导出收进右上角「…」菜单。真实宿主已验证三视图切换、选中态、项目/状态筛选保留与键盘操作，见 UI-DESIGN.md。
+
+2026-11-14 本机视觉迭代：参考用户已安装的 Super Productivity 的项目列表、看板、右侧详情和任务菜单。新增紧凑列表行、标签选择器、原生 Popover 任务菜单及单处子任务进度；缩窄项目栏并调整列宽。验证范围与截图见 [UI-DESIGN.md](UI-DESIGN.md)。本轮不解除完整发布验收门槛，前轮发现的草稿保存冲突和跨面板草稿丢失仍未修复。
 
 用户在浏览器验证受阻后要求继续；本轮继续源码和服务层测试。原执行规范的 **Gate 0 与发布准入仍为 BLOCKED**，不能将下方源码已实现视为完整验收通过。
 
@@ -38,3 +46,5 @@
 5. 核心链路：创建任务 → 看板待办 → 进行中 → 矩阵 Q1 → 一个子任务完成 → 父子一起换项目 → 导出/导入新测试库 → 重启回读。
 6. 执行 V-001～V-030。每项记录实际操作、预期/实际值、证据路径、PASS/FAIL/BLOCKED/NOT_RUN，不用源码检查替代 UI 结果。
 7. 修复实际缺陷后复测；全部 P0 通过再解除草稿状态并发布。
+
+紧凑布局补充：默认状态和 Q4 不常驻卡片，辅助信息合并一行；共享 ActionMenu 提供任务、备份和项目选项。常驻归档复选框改为项目菜单入口，保留只读查看与恢复。真实宿主的尺寸、导入导出、归档恢复、分类、排序、拖拽及子任务验收见 UI-DESIGN.md 的最新记录。

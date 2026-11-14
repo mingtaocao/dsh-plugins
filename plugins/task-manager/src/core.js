@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 export const FORMAT = "dsh-task-manager";
 export const MAX_RECORDS = 20000;
-const states = ["todo", "doing", "blocked", "done"];
+const states = ["todo", "doing", "done"];
 const priorities = ["low", "normal", "high"];
 export function fail(message, code = "INVALID_INPUT") {
   throw Object.assign(new Error(message), { code });
@@ -137,6 +137,16 @@ export function validateState(s) {
     }
   return s;
 }
+/** Read old v1 snapshots/backups without retaining the removed blocked state. */
+export function migrateLegacyState(value) {
+  if (!Array.isArray(value?.tasks) || !value.tasks.some((t) => t?.status === "blocked"))
+    return validateState(value);
+  const next = structuredClone(value);
+  for (const task of next.tasks)
+    if (task.status === "blocked") task.status = "todo";
+  next.revision++;
+  return validateState(next);
+}
 export function exportData(s, now = new Date().toISOString()) {
   return {
     format: FORMAT,
@@ -215,7 +225,7 @@ export function parseImport(input) {
     Array.isArray(raw.projects) && Array.isArray(raw.tasks),
     "项目和任务数组缺失",
   );
-  return validateState({
+  return migrateLegacyState({
     schemaVersion: raw.schemaVersion,
     revision: 0,
     receipts: [],

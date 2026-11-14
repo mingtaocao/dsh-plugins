@@ -2,7 +2,7 @@
 import { z } from "zod";
 import {
   emptyState,
-  validateState,
+  migrateLegacyState,
   TaskService,
   exportData,
   previewImport,
@@ -11,7 +11,7 @@ export const inject = ["storageDomain", "connection"];
 export async function apply(ctx) {
   const schema = z.custom((value) => {
     try {
-      validateState(value);
+      migrateLegacyState(value);
       return true;
     } catch {
       return false;
@@ -24,6 +24,10 @@ export async function apply(ctx) {
     global: { schema, initial: emptyState() },
   });
   ctx.effect(() => () => domain.close());
+  const stored = domain.global.get();
+  const migrated = migrateLegacyState(stored);
+  // Finish the durable migration before accepting requests. A failed write aborts startup.
+  if (migrated !== stored) await domain.global.set(migrated);
   const service = new TaskService(
     () => domain.global.get(),
     (value) => domain.global.set(value),

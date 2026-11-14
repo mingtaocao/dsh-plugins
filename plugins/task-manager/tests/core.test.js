@@ -6,6 +6,7 @@ import {
   emptyState,
   reduce,
   validateState,
+  migrateLegacyState,
   parseImport,
   previewImport,
   exportData,
@@ -81,13 +82,61 @@ test("V-007 blank/long titles, impossible dates and nonboolean quadrant updates 
 test("V-008/015/016 status and quadrant mutations are orthogonal; reopen clears completedAt", () => {
   const x = setup();
   x.op("task.update", { id: x.t, important: true, urgent: true });
-  for (const status of ["doing", "blocked", "done", "todo"]) {
+  for (const status of ["doing", "done", "todo"]) {
     x.op("task.update", { id: x.t, status });
     const t = x.s.tasks[0];
     assert.equal(t.important, true);
     assert.equal(t.urgent, true);
     assert.equal(t.completedAt, status === "done" ? now : null);
   }
+});
+test("removed blocked state is rejected by task edits and board drops without changing data", () => {
+  const x = setup(), before = structuredClone(x.s);
+  assert.throws(() => x.op("task.update", { id: x.t, status: "blocked" }));
+  assert.throws(() => x.op("task.drop", { id: x.t, view: "board", status: "blocked" }));
+  assert.deepEqual(x.s, before);
+});
+test("legacy blocked parents and children migrate to todo without losing data; migration is idempotent", () => {
+  const x = setup();
+  x.op("task.create", { projectId: x.p, parentId: x.t, title: "Child" });
+  x.op("task.update", { id: x.t, notes: "Keep notes", important: true, urgent: true });
+  const done = x.op("task.create", { projectId: x.p2, title: "Done" });
+  x.op("task.update", { id: done, status: "done" });
+  x.op("project.update", { id: x.p, archived: true });
+  const legacy = structuredClone(x.s);
+  for (const t of legacy.tasks) if (t.id !== done) t.status = "blocked";
+  const original = structuredClone(legacy), expected = structuredClone(legacy);
+  for (const t of expected.tasks) if (t.status === "blocked") t.status = "todo";
+  expected.revision++;
+  assert.throws(() => validateState(legacy));
+  const migrated = migrateLegacyState(legacy);
+  assert.deepEqual(migrated, expected);
+  assert.deepEqual(legacy, original);
+  assert.equal(migrateLegacyState(migrated), migrated);
+});
+test("old native backups map blocked to todo on preview/import and export only supported statuses", () => {
+  const x = setup();
+  x.op("task.create", { projectId: x.p, parentId: x.t, title: "Child" });
+  const backup = exportData(x.s);
+  for (const t of backup.tasks) t.status = "blocked";
+  const input = JSON.stringify(backup);
+  assert(parseImport(input).tasks.every((t) => t.status === "todo"));
+  assert.equal(previewImport(emptyState(), input).tasks, 1);
+  const { state } = reduce(emptyState(), {
+    requestId: "legacy-import", revision: 0, op: "import", args: { input },
+  });
+  assert.equal(state.tasks.length, 2);
+  assert(exportData(state).tasks.every((t) => t.status === "todo"));
+  assert.equal(previewImport(state, input).skipped, 4);
+});
+test("legacy state migration still rejects unrelated corrupt data and unknown statuses", () => {
+  const x = setup(), legacy = structuredClone(x.s);
+  legacy.tasks[0].status = "blocked";
+  legacy.tasks[0].projectId = "missing";
+  assert.throws(() => migrateLegacyState(legacy), /项目不存在/);
+  legacy.tasks[0].projectId = x.p;
+  legacy.tasks[0].status = "unknown";
+  assert.throws(() => migrateLegacyState(legacy), /状态/);
 });
 test("V-010 two levels only, parent must exist in same project", () => {
   const x = setup(),

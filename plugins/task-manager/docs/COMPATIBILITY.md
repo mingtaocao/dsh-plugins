@@ -28,7 +28,7 @@ Host 使用 `storageDomain.open`、全局单快照 `get/set` 与 `connection.fet
 | project.isArchived | archivedAt | 布尔；时间为本地迁移时间，不伪装历史原值 |
 | task.projectId | projectId | 子任务缺省时继承父项目；显式不一致拒绝 |
 | task.parentId/subTaskIds | parentId + 子任务顺序 | 双向一致、两级、不能孤儿或循环 |
-| task.isDone | todo/done | 仅接受布尔，不能推断 doing/blocked |
+| task.isDone | todo/done | 仅接受布尔，不能推断 doing |
 | task.notes | notes | 纯文本；不执行 HTML |
 | task.created | createdAt | 有限毫秒时间戳 |
 | task.dueDay | dueDate | 真实 YYYY-MM-DD 日期 |
@@ -39,3 +39,5 @@ Host 使用 `storageDomain.open`、全局单快照 `get/set` 与 `connection.fet
 SP 没有已核实的准确完成时间映射：本地 `completedAt` 使用导入时间，`completionTimeEstimated=true` 标明估算；用户恢复再完成后重新记录真实本地操作时间。
 
 裸状态快照、未知 crossModelVersion、结构不完整、引用断裂和异常字段类型一律拒绝，原库不变。未来新增适配必须先补官方公开样本与 golden test，不能放宽为“猜测结构也导入”。
+
+旧版 DSH 原生 v1 备份里的 `blocked` 导入时转为 `todo`；新导出只包含 todo/doing/done。
