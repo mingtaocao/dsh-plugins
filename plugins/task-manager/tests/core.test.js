@@ -16,7 +16,7 @@ const now = "2026-11-14T12:00:00.000Z";
 function setup() {
   let s = emptyState(),
     n = 0;
-  const op = (name, args = {}, extra = {}) => {
+  const op = (name, args = {}, extra = {}, time = now) => {
     const r = reduce(
       s,
       {
@@ -26,7 +26,7 @@ function setup() {
         args,
         ...extra,
       },
-      now,
+      time,
       () => `id-${++n}`,
     );
     s = r.state;
@@ -89,6 +89,46 @@ test("V-008/015/016 status and quadrant mutations are orthogonal; reopen clears 
     assert.equal(t.urgent, true);
     assert.equal(t.completedAt, status === "done" ? now : null);
   }
+});
+test("completion time records each transition to done and survives ordinary edits and same-status saves", () => {
+  const x = setup(), first = "2026-11-14T13:00:00.000Z", later = "2026-11-14T14:00:00.000Z";
+  const order = x.s.tasks[0].listOrder;
+  x.op("task.update", { id: x.t, status: "done" }, {}, first);
+  assert.equal(x.s.tasks[0].completedAt, first);
+  x.op("task.update", { id: x.t, notes: "Edit after completion", status: "done" }, {}, later);
+  assert.equal(x.s.tasks[0].completedAt, first);
+  x.op("task.drop", { id: x.t, view: "board", status: "done" }, {}, later);
+  assert.equal(x.s.tasks[0].completedAt, first);
+  x.op("task.update", { id: x.t, status: "todo" }, {}, later);
+  assert.equal(x.s.tasks[0].completedAt, null);
+  x.op("task.drop", { id: x.t, view: "board", status: "done" }, {}, later);
+  assert.equal(x.s.tasks[0].completedAt, later);
+  assert.equal(x.s.tasks[0].listOrder, order);
+});
+test("list sorting rejects completed parents and children without rewriting completion times", () => {
+  const x = setup();
+  const child = x.op("task.create", { projectId: x.p, parentId: x.t, title: "Child" });
+  x.op("task.update", { id: x.t, status: "done" });
+  x.op("task.update", { id: child, status: "done" });
+  const before = structuredClone(x.s);
+  assert.throws(() => x.op("reorder", { view: "list", ids: [x.t] }), /完成时间/);
+  assert.throws(() => x.op("reorder", { view: "list", ids: [child] }), /完成时间/);
+  assert.throws(() => x.op("task.drop", { view: "list", id: x.t }), /完成时间/);
+  assert.deepEqual(x.s, before);
+});
+test("dropping an active task at the completed boundary appends it to active tasks only", () => {
+  const x = setup(), second = x.op("task.create", { projectId: x.p, title: "Second" }),
+    completed = x.op("task.create", { projectId: x.p, title: "Completed" });
+  x.op("task.update", { id: completed, status: "done" });
+  const before = structuredClone(x.s);
+  const done = structuredClone(x.s.tasks.find((t) => t.id === completed));
+  x.op("task.drop", { id: x.t, view: "list", beforeId: completed });
+  assert.deepEqual(x.s.tasks.filter((t) => t.status !== "done").sort((a, b) => a.listOrder - b.listOrder).map((t) => t.id), [second, x.t]);
+  assert.deepEqual(x.s.tasks.find((t) => t.id === completed), done);
+  assert.deepEqual(x.s.tasks.map((t) => [t.boardOrder, t.matrixOrder]), before.tasks.map((t) => [t.boardOrder, t.matrixOrder]));
+  const foreign = x.op("task.create", { projectId: x.p2, title: "Other project" });
+  x.op("task.update", { id: foreign, status: "done" });
+  assert.throws(() => x.op("task.drop", { id: x.t, view: "list", beforeId: foreign }), /同项目/);
 });
 test("removed blocked state is rejected by task edits and board drops without changing data", () => {
   const x = setup(), before = structuredClone(x.s);

@@ -604,6 +604,8 @@ export function reduce(
       check(["list", "board", "matrix"].includes(a.view), "拖动视图无效");
       const t = task();
       check(t.parentId === null, "只能拖动顶层卡片");
+      if (a.view === "list")
+        check(t.status !== "done", "已完成任务按完成时间排列，不能手动排序");
       const key = {
         list: "listOrder",
         board: "boardOrder",
@@ -630,6 +632,7 @@ export function reduce(
             x.id !== t.id &&
             x.parentId === null &&
             x.projectId === t.projectId &&
+            (a.view !== "list" || x.status !== "done") &&
             (a.view !== "board" || x.status === t.status) &&
             (a.view !== "matrix" ||
               (x.important === t.important && x.urgent === t.urgent)),
@@ -637,8 +640,13 @@ export function reduce(
         .sort((x, y) => x[key] - y[key]);
       let at = group.length;
       if (a.beforeId) {
-        at = group.findIndex((x) => x.id === a.beforeId);
-        check(at >= 0, "只能在同项目同分组内排序");
+        const before = s.tasks.find((x) => x.id === a.beforeId);
+        const completedBoundary = a.view === "list" && before?.status === "done" &&
+          before.parentId === null && before.projectId === t.projectId;
+        if (!completedBoundary) {
+          at = group.findIndex((x) => x.id === a.beforeId);
+          check(at >= 0, "只能在同项目同分组内排序");
+        }
       }
       group.splice(at, 0, t);
       group.forEach((x, n) => {
@@ -677,6 +685,9 @@ export function reduce(
       if (a.view !== "project" && a.ids.length) {
         const first = table.find((t) => t.id === a.ids[0]);
         check(first, "排序任务不存在");
+        if (a.view === "list")
+          check(a.ids.every((id) => table.find((t) => t.id === id)?.status !== "done"),
+            "已完成任务按完成时间排列，不能手动排序");
         check(
           a.ids.every((i) => {
             const t = table.find((x) => x.id === i);

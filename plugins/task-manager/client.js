@@ -9,7 +9,8 @@ window.__ModuleLoader__.load({
       unsupported: "未导入的字段或模块",
       more: "显示更多",
       title: "任务管理",
-      list: "列表",
+      list: "全部任务",
+      parentTask: "所属主任务",
       board: "看板",
       matrix: "四象限",
       views: "视图",
@@ -75,6 +76,8 @@ window.__ModuleLoader__.load({
       discard: "放弃尚未保存的修改？",
       complete: "标记完成",
       reopen: "恢复待办",
+      completedOn: "完成于",
+      completedEstimated: "完成于（估算）",
       countsDetail: "主任务 / 子任务",
       move: "移动象限",
       inherited: "象限与项目跟随父任务",
@@ -98,7 +101,8 @@ window.__ModuleLoader__.load({
       unsupported: "Unsupported fields or sections",
       more: "Show more",
       title: "Task manager",
-      list: "List",
+      list: "All tasks",
+      parentTask: "Parent task",
       board: "Board",
       matrix: "Matrix",
       views: "Views",
@@ -165,6 +169,8 @@ window.__ModuleLoader__.load({
       discard: "Discard unsaved changes?",
       complete: "Mark done",
       reopen: "Reopen",
+      completedOn: "Completed",
+      completedEstimated: "Completed (estimated)",
       countsDetail: "Tasks / subtasks",
       move: "Move quadrant",
       inherited: "Project and quadrant follow the parent task",
@@ -211,6 +217,19 @@ window.__ModuleLoader__.load({
       .mtt-message:empty{display:none}
       .mtt-message{font-size:11px;padding:5px 20px}
       .mtt-content{padding:5px 20px 16px}
+      .mtt-project-folder{margin-bottom:8px;border:1px solid var(--mt-line);border-radius:7px;overflow:hidden}
+      .mtt-project-folder>summary{display:flex;align-items:center;gap:8px;padding:10px 12px;list-style:none;cursor:pointer;font-size:13px;background:var(--mt-tint)}
+      .mtt-project-folder>summary::-webkit-details-marker{display:none}
+      .mtt-project-folder>summary>.mtt-icon:first-child{width:11px;height:11px;transition:transform .15s}
+      .mtt-project-folder[open]>summary>.mtt-icon:first-child{transform:rotate(90deg)}
+      .mtt-folder-name{flex:1;min-width:0;overflow-wrap:anywhere}
+      .mtt-folder-tasks{padding:8px 8px 2px}
+      .mtt-folder-tasks>.mtt-empty{padding:4px 8px 10px;margin:0;font-size:12px}
+      .mtt-child-create{grid-column:1 / -1;display:flex;align-items:center;gap:6px;margin:7px 0 0 22px}
+      .mtt-child-create input{flex:1;min-width:0;padding:5px 7px;font-size:12px}
+      .mtt-child-create button{font-size:11px;padding:4px 7px}
+      .mtt-card button.mtt-parent-ref{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:0;padding:0;background:transparent;font-size:10px;color:var(--mt-muted)}
+      .mtt-project-list>button{display:flex;align-items:center;gap:8px}
       .mtt-columns{grid-template-columns:repeat(3,minmax(170px,1fr));gap:12px}
       .mtt-matrix{grid-template-columns:repeat(2,minmax(230px,1fr))}
       .mtt-group{background:var(--mt-tint);border:0;border-radius:10px;padding:8px;scrollbar-width:thin}
@@ -235,6 +254,8 @@ window.__ModuleLoader__.load({
       .mtt-card:hover .mtt-more,.mtt-card:focus-within .mtt-more,.mtt-more[aria-expanded=true]{opacity:1}
       .mtt-card-secondary{display:flex;align-items:center;flex-wrap:wrap;gap:3px 8px;margin:3px 0 0 22px;font-size:10px;line-height:16px;color:var(--mt-muted)}
       .mtt-card-secondary:empty{display:none}
+      .mtt-completed-at{color:var(--mt-muted);font-size:10px;line-height:16px;white-space:nowrap;font-variant-numeric:tabular-nums}
+      .mtt-completed-full{display:block;font-size:12px;white-space:normal;margin:10px 0}
       .mtt-card-secondary>span{display:inline-flex;align-items:center;gap:4px;max-width:100%}
       .mtt-card-secondary .mtt-icon{width:11px;height:11px}
       .mtt-card-secondary>.mtt-project-tag{display:block;overflow:hidden;max-width:160px;text-overflow:ellipsis;white-space:nowrap}
@@ -268,11 +289,11 @@ window.__ModuleLoader__.load({
       .mtt-action-menu::backdrop{background:transparent}
       .mtt-action-menu>button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;margin:0;border:0;background:transparent;border-radius:5px;font-size:12px;text-align:left}
       .mtt-action-menu>button:hover{background:var(--mt-tint)}
-      .mtt-view-list .mtt-content>.mtt-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px}
+      .mtt-view-list .mtt-content .mtt-card{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px}
       .mtt-view-list .mtt-card-top{grid-column:1;grid-row:1}
       .mtt-view-list .mtt-card-secondary{grid-column:2;grid-row:1;margin:0;padding-right:24px;align-self:center}
       .mtt-view-list .mtt-card:has(.mtt-subtasks[open]) .mtt-card-secondary{grid-column:1 / -1;grid-row:2;margin:3px 0 0 22px;padding-right:0}
-      @container(max-width:560px){.mtt-view-list .mtt-content>.mtt-card{display:block}.mtt-view-list .mtt-card-secondary{margin:3px 0 0 22px;padding-right:0}}
+      @container(max-width:560px){.mtt-view-list .mtt-content .mtt-card{display:block}.mtt-view-list .mtt-card-secondary{margin:3px 0 0 22px;padding-right:0}}
       @media(hover:none){.mtt button.mtt-more{opacity:1}}
       @media(prefers-reduced-motion:reduce){.mtt-card,.mtt-more,.mtt-subtasks>summary>.mtt-icon{transition:none}}
       @container(max-width:560px){.mtt-columns:not(.mtt-matrix){grid-template-columns:repeat(3,180px)}.mtt-matrix{grid-template-columns:1fr;grid-template-rows:auto;height:auto;min-height:100%}.mtt-matrix>.mtt-group{min-height:180px}}
@@ -286,6 +307,15 @@ window.__ModuleLoader__.load({
     ];
     const qkey = (t) =>
       quads.find((q) => q[0] === t.important && q[1] === t.urgent)[2];
+    function compareListTasks(a, b) {
+      const aDone = a.status === "done", bDone = b.status === "done";
+      if (aDone !== bDone) return Number(aDone) - Number(bDone);
+      if (aDone) {
+        const byCompletion = Date.parse(a.completedAt) - Date.parse(b.completedAt);
+        if (byCompletion) return byCompletion;
+      }
+      return a.listOrder - b.listOrder;
+    }
     function Button({ children, ...props }) {
       return h("button", { type: "button", ...props }, children);
     }
@@ -385,6 +415,27 @@ window.__ModuleLoader__.load({
         model.subscribe,
         model.getSnapshot,
       );
+      const dateLocale = document.documentElement.lang || navigator.language;
+      const completionFormats = React.useMemo(() => {
+        const options = {
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+        };
+        return {
+          compact: new Intl.DateTimeFormat(dateLocale, options),
+          full: new Intl.DateTimeFormat(dateLocale, { ...options, second: "2-digit" }),
+        };
+      }, [dateLocale]);
+      function completionTime(item, full = false) {
+        if (item.status !== "done" || !item.completedAt) return null;
+        const date = new Date(item.completedAt);
+        const label = t(item.completionTimeEstimated ? "completedEstimated" : "completedOn");
+        return h("time", {
+          className: "mtt-completed-at" + (full ? " mtt-completed-full" : ""),
+          dateTime: item.completedAt,
+          title: label + " " + completionFormats.full.format(date),
+        }, label + " " + completionFormats[full ? "full" : "compact"].format(date));
+      }
       const [scope, setScope] = React.useState("all"),
         [view, setView] = React.useState("list"),
         [status, setStatus] = React.useState("all"),
@@ -396,6 +447,9 @@ window.__ModuleLoader__.load({
         [error, setError] = React.useState(""),
         [busy, setBusy] = React.useState(false),
         [notice, setNotice] = React.useState("");
+      const [expandedProjects, setExpandedProjects] = React.useState({});
+      const [collapsedParents, setCollapsedParents] = React.useState({});
+      const [addingChild, setAddingChild] = React.useState(null);
       const [createProject, setCreateProject] = React.useState("");
       const fileRef = React.useRef(),
         lock = React.useRef(false),
@@ -457,7 +511,7 @@ window.__ModuleLoader__.load({
           map.set(task.parentId, rows);
         }
         for (const rows of map.values())
-          rows.sort((a, b) => a.listOrder - b.listOrder);
+          rows.sort(compareListTasks);
         return map;
       }, [state]);
       const children = (id) => childMap.get(id) ?? [];
@@ -497,10 +551,11 @@ window.__ModuleLoader__.load({
         setScope("all");
       }
       function sort(items, id, direction, sortView) {
+        if (sortView === "list") items = items.filter((item) => item.status !== "done");
         const ids = items.map((x) => x.id),
           i = ids.indexOf(id),
           j = i + direction;
-        if (j < 0 || j >= ids.length) return;
+        if (i < 0 || j < 0 || j >= ids.length) return;
         [ids[i], ids[j]] = [ids[j], ids[i]];
         return change("reorder", { view: sortView, ids });
       }
@@ -539,7 +594,7 @@ window.__ModuleLoader__.load({
       }
       const orderKey = { list: "listOrder", board: "boardOrder", matrix: "matrixOrder" }[view];
       const orderGroupKey = (item) => JSON.stringify([
-        item.projectId, view === "board" ? item.status : view === "matrix" ? qkey(item) : "list",
+        item.projectId, view === "board" ? item.status : view === "matrix" ? qkey(item) : item.status === "done" ? "completed" : "active",
       ]);
       const orderGroups = new Map();
       for (const item of roots) {
@@ -547,18 +602,20 @@ window.__ModuleLoader__.load({
         if (!orderGroups.has(key)) orderGroups.set(key, []);
         orderGroups.get(key).push(item);
       }
-      for (const items of orderGroups.values()) items.sort((a, b) => a[orderKey] - b[orderKey]);
+      for (const items of orderGroups.values())
+        items.sort(view === "list" ? compareListTasks : (a, b) => a[orderKey] - b[orderKey]);
       function card(item, group = {}) {
         const subs = children(item.id),
           completed = subs.filter((s) => s.status === "done").length,
           project = state.projects.find((p) => p.id === item.projectId);
         const siblings = orderGroups.get(orderGroupKey(item));
         const position = siblings.findIndex((x) => x.id === item.id);
+        const automaticOrder = view === "list" && item.status === "done";
         return h("article", {
           key: item.id,
           className: "mtt-card " + (item.status === "done" ? "mtt-done" : ""),
           "data-task-id": item.id, "data-drop": dragTarget === item.id,
-          onDragEnd: () => setDragTarget(null), draggable: !busy && !archived,
+          onDragEnd: () => setDragTarget(null), draggable: !busy && !archived && !automaticOrder,
           onDragStart: (e) => {
             if (e.target.closest("[popover]")) { e.preventDefault(); return; }
             e.dataTransfer.setData("text/x-mt-task", item.id);
@@ -580,20 +637,32 @@ window.__ModuleLoader__.load({
                 h("label", { className: "mtt-menu-field" }, h("span", null, t("quadrant")), quadrantSelect(item)),
               ),
               h(Button, { onClick: () => open(item.id) }, h(Icon, { name: "detail" }), t("details")),
+              h(Button, { disabled: busy || archived, onClick: () => {
+                setAddingChild(item.id);
+                setCollapsedParents((values) => ({ ...values, [item.id]: false }));
+              } }, h(Icon, { name: "plus" }), t("addChild")),
               ...[-1, 1].map((direction) => h(Button, {
                 key: direction,
-                disabled: busy || archived || (direction < 0 ? position === 0 : position === siblings.length - 1),
+                disabled: busy || archived || automaticOrder || (direction < 0 ? position === 0 : position === siblings.length - 1),
                 onClick: () => sort(siblings, item.id, direction, view),
               }, h(Icon, { name: direction < 0 ? "up" : "down" }), t(direction < 0 ? "up" : "down"))),
             ),
           ),
           h("div", { className: "mtt-card-secondary" },
-            scope === "all" && project ? h("span", { className: "mtt-project-tag", title: project.name }, h(Icon, { name: "project" }), project.name) : null,
+            scope === "all" && view !== "list" && project ? h("span", { className: "mtt-project-tag", title: project.name }, h(Icon, { name: "project" }), project.name) : null,
             item.priority !== "normal" ? h("span", { className: "mtt-priority", "data-priority": item.priority }, t("priority") + " · " + t(item.priority)) : null,
             item.dueDate ? h("span", { className: "mtt-due" }, h(Icon, { name: "calendar" }), item.dueDate) : null,
             view !== "board" && item.status !== "todo" ? statusSelect(item) : null,
             view !== "matrix" && qkey(item) !== "q4" ? quadrantSelect(item) : null,
-            subs.length ? h("details", { className: "mtt-subtasks" },
+            view === "list" ? completionTime(item) : null,
+            subs.length ? h("details", {
+              className: "mtt-subtasks", open: !(collapsedParents[item.id] ?? (view !== "list")),
+              onToggle: (e) => {
+                if (e.target !== e.currentTarget) return;
+                const collapsed = !e.currentTarget.open;
+                setCollapsedParents((values) => values[item.id] === collapsed ? values : { ...values, [item.id]: collapsed });
+              },
+            },
               h("summary", { "aria-label": t("subtasks") + ` ${completed}/${subs.length}`, title: t("subtasks") },
                 h(Icon, { name: "chevron" }),
                 h("span", null, `${completed}/${subs.length}`),
@@ -607,8 +676,50 @@ window.__ModuleLoader__.load({
                   onChange: (e) => change("task.update", { id: s.id, status: e.target.checked ? "done" : "todo" }),
                 }),
                 h(Button, { className: "mtt-task-title", onClick: () => open(s.id) }, s.title),
+                view === "list" ? h(Button, { className: "mtt-parent-ref", title: t("parentTask") + ": " + item.title, onClick: () => open(item.id) }, t("parentTask") + " · " + item.title) : null,
+                view === "list" ? completionTime(s) : null,
               )),
             ) : null,
+          ),
+          addingChild === item.id ? h("form", {
+            className: "mtt-child-create", "aria-label": t("addChild") + ": " + item.title,
+            onKeyDown: (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setAddingChild(null); } },
+            onSubmit: async (e) => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const result = await change("task.create", { projectId: item.projectId, parentId: item.id, title: new FormData(form).get("child") });
+              if (result !== false) {
+                form.reset();
+                setCollapsedParents((values) => ({ ...values, [item.id]: false }));
+                form.elements.namedItem("child")?.focus();
+              }
+            },
+          },
+            h("input", { name: "child", "aria-label": t("addChild"), placeholder: t("addChild"), required: true, maxLength: 200, autoFocus: true, disabled: busy || archived }),
+            h("button", { type: "submit", disabled: busy || archived }, t("create")),
+            h(Button, { onClick: () => setAddingChild(null) }, t("cancel")),
+          ) : null,
+        );
+      }
+      function projectFolder(project) {
+        const items = roots.filter((item) => item.projectId === project.id).sort(compareListTasks);
+        return h("details", {
+          key: project.id, className: "mtt-project-folder", "data-project-id": project.id,
+          open: expandedProjects[project.id] ?? false,
+          onToggle: (e) => {
+            if (e.target !== e.currentTarget) return;
+            const expanded = e.currentTarget.open;
+            setExpandedProjects((values) => values[project.id] === expanded ? values : { ...values, [project.id]: expanded });
+          },
+        },
+          h("summary", null,
+            h(Icon, { name: "chevron" }), h(Icon, { name: "project" }),
+            h("span", { className: "mtt-folder-name" }, project.name),
+            h("span", { className: "mtt-count" }, items.length),
+          ),
+          h("div", { className: "mtt-folder-tasks" },
+            limited(items, "project-" + project.id, (item) => card(item)),
+            !items.length ? h("p", { className: "mtt-empty" }, t("empty")) : null,
           ),
         );
       }
@@ -647,6 +758,7 @@ window.__ModuleLoader__.load({
             h("h2", null, t("details")),
             h(Button, { onClick: () => open(null) }, t("close")),
           ),
+          completionTime(item, true),
           h(
             "form",
             {
@@ -814,12 +926,13 @@ window.__ModuleLoader__.load({
                       "div",
                       { className: "mtt-row" },
                       h("span", null, t(s.status)),
+                      completionTime(s),
                       ...[-1, 1].map((d) =>
                         h(
                           Button,
                           {
                             key: d,
-                            disabled: busy || archived,
+                            disabled: busy || archived || s.status === "done",
                             "aria-label": t(d < 0 ? "up" : "down"),
                             onClick: () =>
                               sort(children(item.id), s.id, d, "list"),
@@ -1035,7 +1148,7 @@ window.__ModuleLoader__.load({
         h(
           "header",
           { className: "mtt-head" },
-          h("h1", null, t(view)),
+          h("h1", null, view === "list" && current ? current.name : t(view)),
           h(ActionMenu, { label: t("moreActions"), buttonClass: "mtt-head-menu", disabled: busy },
             h(
               Button,
@@ -1112,7 +1225,13 @@ window.__ModuleLoader__.load({
               ["list", "board", "matrix"].map((v) =>
                 h(
                   Button,
-                  { key: v, "aria-pressed": view === v, onClick: () => setView(v) },
+                  { key: v, "aria-pressed": view === v && (v !== "list" || (scope === "all" && !archived)), onClick: () => {
+                    if (v === "list") {
+                      if (!open(null)) return;
+                      setScope("all"); setArchived(false); setStatus("all");
+                    }
+                    setView(v);
+                  } },
                   h(Icon, { name: v }),
                   t(v),
                 ),
@@ -1134,22 +1253,23 @@ window.__ModuleLoader__.load({
               archived ? h(Button, { className: "mtt-archive-return", onClick: toggleArchived },
                 h(Icon, { name: "chevron" }), t("activeProjects"),
               ) : null,
-              h(
+              archived ? h(
                 Button,
                 {
                   "aria-pressed": scope === "all",
                   onClick: () => setScope("all"),
                 },
                 t("all"),
-              ),
+              ) : null,
               projects.map((p) =>
                 h(
                   Button,
                   {
                     key: p.id,
                     "aria-pressed": scope === p.id,
-                    onClick: () => setScope(p.id),
+                    onClick: () => { if (open(null)) { setScope(p.id); setView("list"); } },
                   },
+                  h(Icon, { name: "project" }),
                   p.name,
                 ),
               ),
@@ -1302,9 +1422,11 @@ window.__ModuleLoader__.load({
                     !archived ? h(Button, { onClick: () => setDialog({ kind: "project" }) }, t("newProject")) : null,
                   )
                 : view === "list"
-                  ? roots.length
+                  ? scope === "all"
+                    ? projects.map(projectFolder)
+                    : roots.length
                     ? limited(
-                        roots.sort((a, b) => a.listOrder - b.listOrder),
+                        roots.sort(compareListTasks),
                         "list",
                         (x) => card(x),
                       )
