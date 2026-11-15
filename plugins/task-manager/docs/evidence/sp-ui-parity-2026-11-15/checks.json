@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-15",
+  "environment": {
+    "host": "DSH 0.2.2-rc.2",
+    "reference": "installed Super Productivity 20.0.0 renderer, isolated temporary origin",
+    "browser": "Chrome",
+    "node": "24.15.0",
+    "sizes": [
+      [
+        1280,
+        720
+      ],
+      [
+        900,
+        720
+      ]
+    ],
+    "data": "independent temporary DSH_HOME; no daily user data"
+  },
+  "core": {
+    "passed": 29,
+    "failed": 0
+  },
+  "browser_scripts": {
+    "ui-workflows.playwright.js": "PASS (fresh browser session)",
+    "ui-draft-recovery.playwright.js": "PASS (same session, same test project)"
+  },
+  "additional_checks": [
+    "edits during a held save request persist the final text",
+    "child creation remains enabled during autosave and waits for it",
+    "export download contains the latest saved note",
+    "priority/deadline/quadrant edits autosave",
+    "overdue deadline is marked",
+    "completed rows retain timestamps and stay below active rows",
+    "900px board parent and child titles each occupy at most two 20px lines",
+    "light/dark color-scheme rendering and narrow detail overlay inspected"
+  ],
+  "board_title_metrics": [
+    {
+      "text": "梳理本周计划",
+      "height": 40,
+      "contentWidth": 83
+    },
+    {
+      "text": "确认工作负责人",
+      "height": 40,
+      "contentWidth": 79
+    },
+    {
+      "text": "整理会议记录",
+      "height": 40,
+      "contentWidth": 79
+    }
+  ],
+  "fresh_browser_console": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "limitations": [
+    "targeted UI regression, not full V-001 through V-030 release acceptance",
+    "no new SP planning, timer, tags, attachments or nested project folder data model",
+    "dark rendering was checked by emulating dark media and setting the document color scheme; host theme settings UI was not tested"
+  ]
+}
