@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createLibrary } from '../lib/library.js';
-import { buildPreview } from '../lib/preview.js';
+import { buildPreview, resolvePreviewReference } from '../lib/preview.js';
 
 async function setup(t) {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'dsh-local-'));
@@ -40,6 +41,43 @@ test('preview refuses root escapes, remote and oversized resources with explicit
   await lib.scan(); const preview = await buildPreview(lib, (await lib.listDocuments()).items[0].id, { maxAssetBytes: 256 });
   assert.equal(preview.warnings.length, 3);
   assert.ok(!preview.html.includes('private'));
+});
+
+test('preview resolves Windows file URLs with mixed drive or UNC server casing inside the selected root', () => {
+  const driveRoot = String.raw`C:\Users\资料 库`;
+  const driveBase = pathToFileURL(path.win32.join(driveRoot, '导出', 'page.html'), { windows: true });
+  assert.equal(
+    resolvePreviewReference('file:///c:/Users/资料%20库/导出/assets/cover.svg#icon', driveBase, driveRoot, true).relative,
+    '导出/assets/cover.svg',
+  );
+
+  const shareRoot = String.raw`\\Server\Share\Library`;
+  const shareBase = pathToFileURL(path.win32.join(shareRoot, 'page.html'), { windows: true });
+  assert.equal(resolvePreviewReference('assets/cover.svg', shareBase, shareRoot, true).relative, 'assets/cover.svg');
+
+  for (const reference of ['../outside.svg', 'file://server/other/Library/cover.svg', 'file://other/Share/Library/cover.svg']) {
+    assert.throws(() => resolvePreviewReference(reference, shareBase, shareRoot, true), /资源超出所选目录/);
+  }
+  assert.throws(() => resolvePreviewReference('file:///D:/Users/资料%20库/cover.svg', driveBase, driveRoot, true), /资源超出所选目录/);
+  assert.throws(() => resolvePreviewReference('https://example.com/cover.svg', driveBase, driveRoot, true), /远程资源默认禁用/);
+
+  const posixRoot = '/home/user/Library';
+  const posixBase = pathToFileURL(`${posixRoot}/page.html`, { windows: false });
+  assert.throws(() => resolvePreviewReference('../library/cover.svg', posixBase, posixRoot, false), /资源超出所选目录/);
+});
+
+test('preview and in-library links use the same relative paths for encoded filenames', async t => {
+  const { root, lib } = await setup(t);
+  await fs.mkdir(path.join(root, '章节'));
+  await fs.writeFile(path.join(root, '首页.html'), '<img src="章节/图片%20%231.svg"><a href="章节/下一页.html">Next</a>');
+  await fs.writeFile(path.join(root, '章节', '图片 #1.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  await fs.writeFile(path.join(root, '章节', '下一页.html'), '<h1>Next</h1>');
+  await lib.scan();
+  const { items } = await lib.listDocuments();
+  const preview = await buildPreview(lib, items.find(doc => doc.name === '首页.html').id);
+  assert.deepEqual(preview.warnings, []);
+  assert.match(preview.html, /src="data:image\/svg\+xml;base64,/);
+  assert.match(preview.html, /data-library-path="章节\/下一页\.html"/);
 });
 test('rename keeps metadata across restart, rejects collisions and traversal, and keeps file bytes', async t => {
   const { root, lib, tmp } = await setup(t);
