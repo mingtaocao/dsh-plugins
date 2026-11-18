@@ -1,9 +1,10 @@
 /** Owner-only DSH Connection Fetch endpoints and the legacy static preview handler. */
 
 import { promises as fs } from 'node:fs';
-import { execFile } from 'node:child_process';
+import path from 'node:path';
+import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import { buildPreview } from './preview.js';
 import { decodeBuffer, mimeFor, isHtmlPath, isTextualPath, normalizeCharset } from './mime.js';
 import { LibraryError } from './library.js';
@@ -138,20 +139,29 @@ function htmlContentType(charset) {
   return `text/html; charset=${name}`;
 }
 
-/** Open the validated local preview URL in the system browser, without a shell. */
-async function openInBrowser(file, browser) {
-  const run = promisify(execFile);
-  if (process.platform === 'win32') {
-    // Pass the native filename as data; PowerShell never parses it as a command.
-    const target = browser === 'edge'
-      ? "$p.FileName='msedge.exe'; $p.Arguments=$env:DSH_HTML_OPEN_URL"
-      : "$p.FileName=$env:DSH_HTML_OPEN_PATH";
-    await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-      `$ErrorActionPreference='Stop'; $p=New-Object System.Diagnostics.ProcessStartInfo; $p.UseShellExecute=$true; ${target}; [System.Diagnostics.Process]::Start($p) | Out-Null`],
-      { env: { ...process.env, DSH_HTML_OPEN_PATH: fileURLToPath(file), DSH_HTML_OPEN_URL: file }, windowsHide: true, timeout: 15000 });
+/** Launch Chrome on the DSH host with the validated file URL as a single argument. */
+async function openInBrowser(file) {
+  if (process.platform === 'darwin') {
+    await promisify(execFile)('/usr/bin/open', ['-a', 'Google Chrome', file], { timeout: 15000 });
     return;
   }
-  await run(process.platform === 'darwin' ? 'open' : 'xdg-open', [file], { timeout: 15000 });
+  const programs = process.platform === 'win32'
+    ? [process.env.ProgramW6432, process.env.ProgramFiles, process.env['ProgramFiles(x86)'], process.env.LOCALAPPDATA]
+        .filter(Boolean).map(base => path.join(base, 'Google', 'Chrome', 'Application', 'chrome.exe'))
+    : ['google-chrome', 'google-chrome-stable'];
+  for (const program of new Set(programs)) {
+    try {
+      await new Promise((resolve, reject) => {
+        const child = spawn(program, [file], { detached: true, stdio: 'ignore' });
+        child.once('error', reject);
+        child.once('spawn', () => { child.unref(); resolve(); });
+      });
+      return;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+  throw new Error('未找到 Google Chrome，请确认运行 DSH 的电脑已安装 Chrome');
 }
 
 /** 组装路由表。 */
@@ -219,7 +229,7 @@ export function createRoutes(library, options = {}) {
 
     endpoint('POST', '/preview', async body => {
       if (typeof body.id !== 'string' || !body.id) throw new LibraryError('bad-request', '缺少文档 id');
-      return buildPreview(library, body.id, { interactive: body.interactive === true });
+      return buildPreview(library, body.id, { interactive: body.interactive !== false });
     }),
 
     endpoint('POST', '/entries', body => library.editEntry(body)),
@@ -238,9 +248,9 @@ export function createRoutes(library, options = {}) {
       if (!isHtmlPath(local.absolutePath)) throw new LibraryError('forbidden', '仅支持打开 HTML 文件');
       const url = pathToFileURL(local.absolutePath).href;
       try {
-        await (options.openExternal ?? openInBrowser)(url, body.browser === 'edge' ? 'edge' : 'default');
+        await (options.openExternal ?? openInBrowser)(url);
       } catch (error) {
-        throw new LibraryError('internal', `无法打开系统浏览器：${String(error?.message ?? error)}`);
+        throw new LibraryError('internal', `无法打开 Google Chrome：${String(error?.message ?? error)}`);
       }
       return { id: doc.id, opened: true, fileUrl: url };
     }),
