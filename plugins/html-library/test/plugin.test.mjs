@@ -15,22 +15,12 @@ function createFakeContext() {
     if (typeof dispose === 'function') effects.push(dispose);
     return dispose;
   };
-  const webCtx = {
-    logger: { info() {}, warn() {}, error() {} },
-    webServer: {
+  const connection = {
+    fetch: {
       register(route) {
         routes.push(route);
-        return () => {
-          const index = routes.indexOf(route);
-          if (index !== -1) routes.splice(index, 1);
-        };
+        return track(() => routes.splice(routes.indexOf(route), 1));
       },
-    },
-    get() {
-      return undefined;
-    },
-    effect(fn) {
-      return track(fn());
     },
   };
   const ctx = {
@@ -39,42 +29,15 @@ function createFakeContext() {
       return track(fn());
     },
     inject(names, callback) {
-      if (names.includes('webServer')) callback(webCtx);
-    },
-    get() {
-      return undefined;
+      if (names.includes('connection')) callback({ connection });
     },
   };
   return { ctx, routes, effects };
 }
 
-function createRes() {
-  return {
-    statusCode: 0,
-    headers: new Map(),
-    body: null,
-    setHeader(name, value) {
-      this.headers.set(String(name).toLowerCase(), String(value));
-    },
-    end(body) {
-      this.body = body === undefined ? null : body;
-    },
-  };
-}
-
-async function call(route, { method = 'GET', url = '/', headers = {}, body } = {}) {
-  const request = {
-    method,
-    url,
-    headers: { host: '127.0.0.1:50988', ...headers },
-    socket: { remoteAddress: '127.0.0.1' },
-    async *[Symbol.asyncIterator]() {
-      if (typeof body === 'string') yield Buffer.from(body, 'utf8');
-    },
-  };
-  const response = createRes();
-  await route.handler(request, response);
-  return response;
+async function call(route, { method = 'GET', url = route.path, body } = {}) {
+  const response = await route.fetch(new Request(new URL(url, 'http://localhost'), { method, body }));
+  return { body: await response.text() };
 }
 
 async function waitFor(check, timeoutMs = 6000) {

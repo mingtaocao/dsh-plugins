@@ -1,15 +1,13 @@
 /**
  * HTML 知识库（dsh-html-library）—— 宿主半入口。
  *
- * 本文件不 import 任何 `@deepseek-ai/*` 包：索引、检索、元数据与静态资源路由
- * 全部由插件自管。可选服务用 `ctx.inject([...], cb)` 声明，缺了它的组合里
- * 插件只是少一块能力（没有 webServer 就没有界面数据通道），而不是抛错。
+ * 索引与元数据由宿主管理，界面通过 DSH Connection 访问。
  *
  * @module dsh-html-library
  */
 
 import { createLibrary, resolveDataDir } from './lib/library.js';
-import { createAuthorize, createRoutes } from './lib/routes.js';
+import { createRoutes } from './lib/routes.js';
 
 /** profile 的 cordis.patch.yml 未给 config 时的缺省值。 */
 const DEFAULT_CONFIG = {
@@ -32,18 +30,11 @@ export function apply(ctx, config) {
 
   const library = createLibrary({ dir: resolveDataDir(), config: resolved, log });
 
-  ctx.inject(['webServer'], (webCtx) => {
-    webCtx.effect(() => {
-      const routes = createRoutes(library, {
-        authorize: createAuthorize(() => webCtx.get('connection')),
-        log,
-      });
-      const disposers = routes.map((route) => webCtx.webServer.register(route));
-      log(`已注册 ${disposers.length} 条 Web 路由`);
-      return () => {
-        for (const dispose of disposers) dispose();
-      };
-    }, 'dsh-html-library: web routes');
+  ctx.inject(['connection'], (sub) => {
+    for (const route of createRoutes(library, { log })) {
+      // The registry authenticates the owner and binds the route to this context's lifetime.
+      sub.connection.fetch.register(route);
+    }
   });
 
   // Watcher：定时补偿扫描（5000ms 默认）。没有目录时不做任何事。
