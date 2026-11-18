@@ -47,8 +47,8 @@ window.__ModuleLoader__.load({
   factory(require) {
     const React = require('react');
     const h = React.createElement;
-    const zh = { title: '文件对比', left: '原文', right: '新版', pasteLeft: '粘贴原文', pasteRight: '粘贴新版', unit: ' 行', resize: '调整左右栏宽度', equal: '两份内容一致', add: '新增', remove: '删除', change: '修改', limit: '内容过长，请分段对比。', result: '逐行差异', line: '第', blank: '空行' };
-    const en = { title: 'File comparison', left: 'Original', right: 'Revised', pasteLeft: 'Paste original text', pasteRight: 'Paste revised text', unit: '', resize: 'Resize columns', equal: 'Both inputs match', add: 'Added', remove: 'Removed', change: 'Changed', limit: 'Input too large. Compare smaller sections.', result: 'Line differences', line: 'Line ', blank: 'Blank line' };
+    const zh = { title: '文件对比', left: '原文', right: '新版', pasteLeft: '粘贴原文', pasteRight: '粘贴新版', unit: ' 行', resize: '调整左右栏宽度', equal: '两份内容一致', add: '新增', remove: '删除', change: '修改', limit: '内容过长，请分段对比。', result: '逐行差异', line: '第', blank: '空行', prev:'上一处', next:'下一处', all:'全部差异', map:'差异位置图' };
+    const en = { title: 'File comparison', left: 'Original', right: 'Revised', pasteLeft: 'Paste original text', pasteRight: 'Paste revised text', unit: '', resize: 'Resize columns', equal: 'Both inputs match', add: 'Added', remove: 'Removed', change: 'Changed', limit: 'Input too large. Compare smaller sections.', result: 'Line differences', line: 'Line ', blank: 'Blank line', prev:'Previous', next:'Next', all:'All differences', map:'Difference map' };
     const Split = React.createContext(null);
     function Layout({ children }) {
       const [width, setWidth] = React.useState(50);
@@ -89,7 +89,7 @@ window.__ModuleLoader__.load({
       return h(React.Fragment, null, chars.slice(0, start).join(''),
         h('mark', null, chars.slice(start, end).join('')), chars.slice(end).join(''));
     }
-    function Editor({ side, value, result, inputRef, update, t }) {
+    function Editor({ side, value, result, current, inputRef, update, t }) {
       const mirror = React.useRef(null);
       const sync = () => {
         const input = inputRef.current;
@@ -111,7 +111,7 @@ window.__ModuleLoader__.load({
               if (n === null) return null;
               const line = result.lines[side][n];
               const peer = row.type === 'change' ? result.lines[1-side][side ? row.l : row.r] : undefined;
-              return h('div', { key:n, 'data-line':n, className:row.type === 'same' ? '' : side ? 'jd-plus' : 'jd-minus' },
+              return h('div', { key:n, 'data-line':n, 'data-gutter':(row.type === 'same' ? '' : '› ') + (n+1), 'data-current':row === current, className:row.type === 'same' ? '' : side ? 'jd-plus' : 'jd-minus' },
                 line ? lineContent(line, peer) : '​');
             })),
           h('textarea', { ref:inputRef, value, spellCheck:false, onScroll:sync,
@@ -122,6 +122,7 @@ window.__ModuleLoader__.load({
       const [inputs, setInputs] = React.useState(['', '']);
       const [snapshot, setResult] = React.useState(null);
       const result = snapshot?.inputs === inputs ? snapshot : null;
+      const [selection, select] = React.useState(0);
       const left = React.useRef(null);
       const right = React.useRef(null);
       const [error, setError] = React.useState('');
@@ -134,7 +135,10 @@ window.__ModuleLoader__.load({
         const timer = setTimeout(() => {
           try {
             const lines = inputs.map(textLines);
-            setResult({ inputs, lines, rows: compareRows(...lines) });
+            const rows = compareRows(...lines);
+            const changes = rows.flatMap((row, position) => row.type === 'same' ? [] : [{row, position}]);
+            select(0);
+            setResult({ inputs, lines, rows, changes });
           } catch (error) {
             if (!(error instanceof RangeError)) throw error;
             setResult(null);
@@ -145,8 +149,11 @@ window.__ModuleLoader__.load({
       }, [inputs, t]);
       const counts = { add: 0, remove: 0, change: 0 };
       if (result) for (const row of result.rows) if (row.type !== 'same') counts[row.type]++;
-      const changes = result ? result.rows.filter(row => row.type !== 'same') : [];
-      function jump(row) {
+      const changes = result?.changes ?? [];
+      const current = changes[selection]?.row;
+      function jump(index) {
+        const {row} = changes[index];
+        select(index);
         for (const [ref, index] of [[left, row.l], [right, row.r]]) {
           if (index === null) continue;
           const input = ref.current;
@@ -162,21 +169,40 @@ window.__ModuleLoader__.load({
       }
       return h(Layout, null, h('style', null, styles),
         h('header', null, h('h2', null, t('title')),
-          h('div', { className:'jd-counts', role:'status' }, Object.keys(counts).filter(k => counts[k]).map(k =>
-            h('span', { key:k, className:'jd-count-'+k }, t(k)+' '+counts[k]+t('unit'))))),
+          current && h('nav', { className:'jd-counts', 'aria-label':t('result') },
+            Object.keys(counts).filter(k => counts[k]).map(k =>
+              h('span', { key:k, className:'jd-count-'+k }, t(k)+' '+counts[k]+t('unit'))),
+            h('button', { disabled:selection === 0, onClick:() => jump(selection-1) }, t('prev')),
+            h('small', {role:'status'}, (selection+1)+' / '+changes.length),
+            h('button', { disabled:selection === changes.length-1, onClick:() => jump(selection+1) }, t('next')))),
         h('div', { className:'jd-workspace' },
-          h('div', { className:'jd-inputs' }, inputs.map((value, side) =>
-            h(Editor, { key:side, side, value, result, t, inputRef:side ? right : left,
-              update:text => setInputs(inputs.map((v,i) => i === side ? text : v)) })),
-            h(Divider, { label:t('resize') })),
+          h('div', {className:'jd-body'},
+            h('div', { className:'jd-inputs' }, inputs.map((value, side) =>
+              h(Editor, { key:side, side, value, result, current, t, inputRef:side ? right : left,
+                update:text => setInputs(inputs.map((v,i) => i === side ? text : v)) })),
+              h(Divider, { label:t('resize') })),
+            current && h('aside', {className:'jd-map', 'aria-label':t('map'), title:t('map')},
+              changes.map(({row,position}, i) => h('button', {key:position,
+                style:{top:100*(position+0.5)/result.rows.length+'%'},
+                'aria-label':t(row.type)+' · '+t('line')+((row.r ?? row.l)+1)+t('unit'),
+                'aria-current':i === selection, onClick:() => jump(i)})))),
           error && h('div', { role:'alert' }, error),
-          result && (changes.length ? h('section', { className:'jd-list', 'aria-label':t('result') },
-            h('h3', null, t('result')),
-            changes.map(row => h('button', { key:[row.l,row.r].join('/'), type:'button', onClick:() => jump(row) },
-              h('span', { className:'jd-count-'+row.type }, t(row.type)),
-              h('small', null, t('line') + ((row.r ?? row.l) + 1) + t('unit')),
-              h('span', { className:'jd-preview' }, snippet(row)))))
-            : h('div', { className:'jd-equal', role:'status' }, t('equal')))));
+          current && h('section', {className:'jd-detail', 'aria-label':t('result')},
+            [current.l,current.r].map((n, side) => {
+              const peer = side ? current.l : current.r;
+              const value = result.lines[side][n];
+              return h('div', {key:side}, h('small', null, t(side ? 'right' : 'left'),
+                n !== null && ' · '+t('line')+(n+1)+t('unit')),
+                h('p', null, n === null ? '—' : lineContent(value || t('blank'),
+                  peer === null ? undefined : result.lines[1-side][peer])));
+            })),
+          current && h('details', { className:'jd-list' },
+            h('summary', null, t('all')+' ('+changes.length+')'),
+            changes.map(({row}, i) => h('button', { key:i, type:'button', 'aria-current':i === selection, onClick:() => jump(i) },
+              h('span', {className:'jd-count-'+row.type}, t(row.type)),
+              h('small', null, t('line')+((row.r ?? row.l)+1)+t('unit')),
+              h('span', {className:'jd-preview'}, snippet(row))))),
+          result && !current && h('div', { className:'jd-equal', role:'status' }, t('equal'))));
     }
     const styles = `
 .jd-panel {
@@ -224,6 +250,28 @@ window.__ModuleLoader__.load({
 .jd-preview {overflow:hidden;text-overflow:ellipsis;white-space:pre;font-size:13px}
 .jd-minus {background:color-mix(in srgb,#c95157 13%,transparent)}
 .jd-plus {background:color-mix(in srgb,#43986c 16%,transparent)}
+.jd-body {flex:1;display:flex;min-height:0}
+.jd-body .jd-inputs {min-width:0}
+.jd-editor textarea,.jd-editor .jd-mirror {padding-left:52px}
+.jd-mirror [data-line] {position:relative}
+.jd-mirror [data-line]::before {content:attr(data-gutter);position:absolute;right:calc(100% + 6px);
+  width:44px;text-align:right;color:var(--dsw-alias-label-primary);opacity:.65;font-size:12px;font-variant-numeric:tabular-nums}
+.jd-mirror [data-current=true] {box-shadow:inset 2px 0 var(--dsw-alias-brand-primary)}
+.jd-map {position:relative;width:22px;flex:none;background:var(--jd-bar);border-left:1px solid var(--jd-line);overflow:hidden}
+.jd-map button {position:absolute;left:0;width:100%;height:8px;transform:translateY(-50%);background:transparent;border:0;cursor:pointer;padding:0}
+.jd-map button::after {content:'';display:block;height:2px;background:#be7952}
+.jd-map button[aria-current=true]::after {height:4px;background:var(--dsw-alias-brand-primary)}
+.jd-counts button {font:inherit;font-size:12px;color:inherit;background:var(--jd-bar);border:1px solid var(--jd-line);border-radius:5px;padding:4px 7px;cursor:pointer}
+.jd-counts button:disabled {opacity:.45;cursor:default}
+.jd-detail {display:grid;grid-template-columns:minmax(0,var(--jd-left)) minmax(0,1fr);padding-right:22px;max-height:25%;overflow:auto;border-top:1px solid var(--jd-line)}
+.jd-detail>div {padding:8px 12px}
+.jd-detail>div+div {border-left:1px solid var(--jd-line)}
+.jd-detail p {white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0}
+.jd-detail mark {color:inherit;background:color-mix(in srgb,#c95157 25%,transparent)}
+.jd-detail>div+div mark {background:color-mix(in srgb,#43986c 30%,transparent)}
+.jd-list summary {cursor:pointer;padding:6px 12px;font-size:13px}
+.jd-list button[aria-current=true] {background:var(--jd-bar)}
+
 `;
     return { inject: ['slots','locale'], apply(ctx) {
       ctx.effect(() => ctx.locale.register('json-diff', { zh, en }), 'File comparison translations');
