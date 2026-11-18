@@ -99,3 +99,39 @@ test('rename keeps metadata across restart, rejects collisions and traversal, an
   assert.equal((await revived.listDocuments({mode:'favorites'})).items[0].id, renamed.id);
   assert.equal((await revived.listDocuments({mode:'missing'})).total, 0);
 });
+
+test('create, index and recover a folder tree without touching sibling files', async t => {
+  const { root, lib } = await setup(t);
+  const rootId = (await lib.snapshot()).roots[0].id;
+  const edit = (action, kind, folder, name) => lib.editEntry({ rootId, action, kind, folder, name });
+  await edit('create', 'folder', '', '新目录');
+  assert.ok((await lib.snapshot()).facets.folders.some(folder => folder.relDir === '新目录' && folder.count === 0));
+  await edit('create', 'file', '新目录', '例子.html');
+  await assert.rejects(edit('create', 'file', '新目录', '例子.html'), /同名/);
+  await assert.rejects(edit('create', 'file', '../', 'escape.html'));
+  await assert.rejects(edit('delete', 'folder', '', ''));
+  await assert.rejects(edit('create', 'file', '', 'CON.html'));
+  await fs.writeFile(path.join(root, '新目录', 'image.svg'), '<svg/>');
+  await edit('delete', 'folder', '', '新目录');
+  assert.equal((await lib.snapshot()).treeDocuments.length, 0);
+  const trash = path.join(root, '.dsh-html-trash');
+  const [batch] = await fs.readdir(trash);
+  assert.equal(await fs.readFile(path.join(trash, batch, '新目录', 'image.svg'), 'utf8'), '<svg/>');
+  await assert.rejects(edit('delete', 'folder', '', '.dsh-html-trash'));
+  await edit('create', 'file', '', 'note.html');
+  await edit('delete', 'file', '', 'note.html');
+  assert.equal((await lib.snapshot()).treeDocuments.length, 0);
+});
+
+test('interactive preview includes local JavaScript only when requested', async t => {
+  const { root, lib } = await setup(t);
+  await fs.writeFile(path.join(root, 'control.html'), '<script src="./control.js"></script><button onclick="activate()">Go</button>');
+  await fs.writeFile(path.join(root, 'control.js'), 'function activate() { document.body.dataset.active = "yes"; }');
+  await lib.scan();
+  const id = (await lib.listDocuments()).items[0].id;
+  assert.doesNotMatch((await buildPreview(lib, id)).html, /<script/);
+  const preview = await buildPreview(lib, id, { interactive: true });
+  assert.match(preview.html, /<script src="data:text\/javascript;base64,/);
+  assert.match(preview.html, /connect-src 'none'/);
+  assert.deepEqual(preview.warnings, []);
+});

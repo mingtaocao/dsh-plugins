@@ -19,6 +19,7 @@ import path from 'node:path';
 import { decodeBuffer, isHtmlPath, extensionOf } from './mime.js';
 import { extractDocument } from './parse.js';
 
+const TRASH = '.dsh-html-trash';
 const STATE_VERSION = 1;
 const DEFAULT_MAX_DOCUMENTS = 5_000;
 const DEFAULT_MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -131,6 +132,7 @@ export function createLibrary(options = {}) {
   let lastIndexStamp = null;
   let scanQueued = false;
   let editing = null;
+  let indexedFolders = [];
 
   // ---------------------------------------------------------------- 持久化
 
@@ -295,13 +297,13 @@ export function createLibrary(options = {}) {
 
   function shouldSkip(relPath, name) {
     if (name === '' || name.startsWith('._') || name.startsWith('~$')) return true;
-    if (EXCLUDED_NAMES.has(name)) return true;
+    if (name.toLowerCase() === TRASH || EXCLUDED_NAMES.has(name.toLowerCase())) return true;
     if (excludePatterns.length === 0) return false;
     const probes = [relPath, `/${relPath}`, name];
     return excludePatterns.some((pattern) => probes.some((probe) => pattern.test(probe)));
   }
 
-  async function walkFiles(root, realRoot) {
+  async function walkFiles(root, realRoot, folders) {
     /** @type {Array<{abs:string, rel:string}>} */
     const found = [];
     const visited = new Set();
@@ -323,13 +325,14 @@ export function createLibrary(options = {}) {
         if (shouldSkip(rel, entry.name)) continue;
         const abs = path.join(current.dir, entry.name);
         if (entry.isDirectory()) {
+          folders.push({ rootId: root.id, relDir: rel });
           stack.push({ dir: abs, rel });
           continue;
         }
         if (entry.isSymbolicLink()) {
           try {
             const real = await fs.realpath(abs);
-            if (!isInside(realRoot, real)) continue; // 软链接逃逸：拒绝
+            if (!isInside(realRoot, real) || isInside(path.join(realRoot, TRASH), real)) continue;
             const info = await fs.stat(real);
             if (info.isDirectory()) continue; // 不跟随目录链接，避免环
             if (!info.isFile() || !isHtmlPath(entry.name)) continue;
@@ -414,6 +417,7 @@ export function createLibrary(options = {}) {
     stats = { lastIndexAt: null, durationMs: 0, fileCount: 0, failed: 0, truncated: false, errors: [] };
     const next = new Map();
     const previous = documents;
+    const folders = [];
     let truncated = false;
 
     for (const root of state.roots) {
@@ -425,7 +429,7 @@ export function createLibrary(options = {}) {
       }
       let files = [];
       try {
-        files = await walkFiles(root, realRoot);
+        files = await walkFiles(root, realRoot, folders);
       } catch (error) {
         stats.errors.push({ rootId: root.id, path: root.path, message: String(error?.message ?? error) });
       }
@@ -458,6 +462,7 @@ export function createLibrary(options = {}) {
       next.set(id, decorate({ ...doc, status: 'missing', error: '源文件已不在原路径' }));
     }
 
+    indexedFolders = folders;
     documents = next;
     stats.fileCount = [...next.values()].filter((doc) => doc.status !== 'missing').length;
     stats.failed = stats.errors.length;
@@ -690,6 +695,12 @@ export function createLibrary(options = {}) {
         });
       }
     }
+    for (const entry of indexedFolders) {
+      const root = rootById(entry.rootId);
+      const key = `${entry.rootId}\u0000${entry.relDir}`;
+      if (root && !folders.has(key)) folders.set(key, { ...entry, rootLabel: path.basename(root.path),
+        label: path.posix.basename(entry.relDir), depth: entry.relDir.split('/').length, count: 0 });
+    }
     return [...folders.values()].sort((left, right) => {
       const byRoot = left.rootLabel.localeCompare(right.rootLabel, 'zh-Hans-CN');
       if (byRoot !== 0) return byRoot;
@@ -801,12 +812,19 @@ export function createLibrary(options = {}) {
     return summaryOf(doc);
   }
 
-  /** Rename one HTML file within its folder; never replace an existing target. */
-  function renameDocument(fileId, rawName) {
+  function withFileEdit(operation) {
     if (editing !== null) throw new LibraryError('busy', '已有文件操作正在进行，请稍后重试');
     editing = (async () => {
       await ensureLoaded();
       if (scanning !== null) await scanning;
+      return operation();
+    })().finally(() => { editing = null; });
+    return editing;
+  }
+
+  /** Rename one HTML file within its folder; never replace an existing target. */
+  function renameDocument(fileId, rawName) {
+    return withFileEdit(async () => {
       const doc = documents.get(fileId);
       if (!doc || doc.status !== 'ok') throw new LibraryError('not-found', '源文件不可用');
       const name = String(rawName ?? '').trim();
@@ -840,8 +858,87 @@ export function createLibrary(options = {}) {
       await runScan();
       await saveNow();
       return summaryOf(documents.get(id));
-    })().finally(() => { editing = null; });
-    return editing;
+    });
+  }
+
+  function validName(value) {
+    return typeof value === 'string' && value.length > 0 && value !== '.' && value !== '..' &&
+      !/[<>:"/\\|?*\x00-\x1f]/.test(value) && !/[ .]$/.test(value) &&
+      !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(value) && Buffer.byteLength(value) <= 255;
+  }
+
+  async function checkedFolder(rootId, folder) {
+    const root = rootById(rootId);
+    if (!root || typeof folder !== 'string') throw new LibraryError('bad-request', '无效的知识目录');
+    let current = root.path;
+    const parts = folder === '' ? [] : folder.split('/');
+    if (parts.some((part, idx) => !validName(part) || shouldSkip(parts.slice(0, idx + 1).join('/'), part))) {
+      throw new LibraryError('forbidden', '目录不可操作');
+    }
+    for (const part of ['', ...parts]) {
+      current = path.join(current, part);
+      const stat = await fs.lstat(current);
+      if (!stat.isDirectory() || stat.isSymbolicLink() || await fs.realpath(current) !== current) {
+        throw new LibraryError('forbidden', '请选择知识库内的实际目录');
+      }
+    }
+    return current;
+  }
+
+  function editEntry({ action, kind, rootId, folder, name }) {
+    return withFileEdit(async () => {
+      if (!['file', 'folder'].includes(kind) || !['create', 'delete'].includes(action) ||
+          !validName(name) || (kind === 'file' && !isHtmlPath(name))) {
+        throw new LibraryError('bad-request', '请输入有效的目录名或 HTML 文件名');
+      }
+      const parent = await checkedFolder(rootId, folder);
+      const relPath = folder ? folder + '/' + name : name;
+      if (shouldSkip(relPath, name)) throw new LibraryError('forbidden', '此名称已被知识库排除');
+      const target = path.join(parent, name);
+      if (action === 'create') {
+        try {
+          if (kind === 'folder') await fs.mkdir(target);
+          else {
+            const title = name.replace(/\.[^.]+$/, '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+            await fs.writeFile(target, `<!doctype html>\n<html><head><meta charset="utf-8"><title>${title}</title></head><body><h1>${title}</h1></body></html>\n`, { flag: 'wx' });
+          }
+        } catch (error) {
+          if (error.code === 'EEXIST') throw new LibraryError('duplicate-name', '同名文件或目录已存在');
+          throw error;
+        }
+      } else {
+        const indexed = kind === 'folder'
+          ? indexedFolders.some(entry => entry.rootId === rootId && entry.relDir === relPath)
+          : documents.has(hashId('d', `${rootId}\u0000${relPath}`));
+        if (!indexed) throw new LibraryError('not-found', '请刷新后选择已索引的文件或目录');
+        if (kind === 'folder' && state.roots.some(root => isInside(target, root.path))) {
+          throw new LibraryError('forbidden', '目录内含有已配置的知识根目录');
+        }
+        const stat = await fs.lstat(target);
+        if (stat.isSymbolicLink() || (kind === 'file' ? !stat.isFile() : !stat.isDirectory())) {
+          throw new LibraryError('forbidden', '文件类型已改变，请刷新');
+        }
+        const trash = path.join(rootById(rootId).path, TRASH);
+        await fs.mkdir(trash, { recursive: true });
+        if (await fs.realpath(trash) !== trash || !(await fs.lstat(trash)).isDirectory()) {
+          throw new LibraryError('forbidden', '回收目录不可用');
+        }
+        const batch = await fs.mkdtemp(path.join(trash, 'removed-'));
+        const destination = path.join(batch, relPath);
+        await fs.mkdir(path.dirname(destination), { recursive: true });
+        await fs.rename(target, destination);
+        for (const [id, doc] of documents) {
+          if (doc.rootId !== rootId || (doc.relPath !== relPath && !doc.relPath.startsWith(relPath + '/'))) continue;
+          documents.delete(id);
+          delete state.favorites[id];
+          delete state.tags[id];
+          delete state.history[id];
+        }
+        await saveNow();
+      }
+      await runScan();
+      return { rootId, relPath };
+    });
   }
 
   // ---------------------------------------------------------------- 静态资源
@@ -868,7 +965,7 @@ export function createLibrary(options = {}) {
     if (root === undefined) throw new LibraryError('forbidden', '未配置的知识目录');
     const segments = parts.slice(1).map(decodeSegment);
     for (const segment of segments) {
-      if (segment === '' || segment === '.' || segment === '..' || segment.includes('/') || segment.includes('\\') || segment.includes('\0')) {
+      if (segment.toLowerCase() === TRASH || segment === '' || segment === '.' || segment === '..' || segment.includes('/') || segment.includes('\\') || segment.includes('\0')) {
         throw new LibraryError('forbidden', '路径不合法');
       }
     }
@@ -882,7 +979,7 @@ export function createLibrary(options = {}) {
     } catch {
       throw new LibraryError('not-found', '文件不存在');
     }
-    if (!isInside(realRoot, real)) throw new LibraryError('forbidden', '路径越界（软链接）');
+    if (!isInside(realRoot, real) || isInside(path.join(realRoot, TRASH), real)) throw new LibraryError('forbidden', '路径越界（软链接）');
     let info;
     try {
       info = await fs.stat(real);
@@ -930,6 +1027,7 @@ export function createLibrary(options = {}) {
     recordRead,
     getDocument,
     renameDocument,
+    editEntry,
     resolveSitePath,
     flush: saveNow,
     isScanning: () => scanning !== null,

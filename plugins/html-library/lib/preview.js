@@ -25,6 +25,7 @@ export function resolvePreviewReference(reference, base, root, windows = process
 }
 
 export async function buildPreview(library, id, limits = {}) {
+  const interactive = limits.interactive === true;
   const doc = await library.getDocument(id);
   if (doc.status !== 'ok') throw new LibraryError('not-found', doc.error || '源文件不可用');
   const locate = relative => library.resolveSitePath([doc.rootId, ...relative.split('/')].map(encodeURIComponent).join('/'));
@@ -104,14 +105,17 @@ export async function buildPreview(library, id, limits = {}) {
     return css.toString();
   };
   const source = decodeBuffer(await read(main, maxAsset)).text;
-  const dom = parse(source, { scriptingEnabled: false });
+  const dom = parse(source, { scriptingEnabled: interactive });
   const base = pathToFileURL(path.join(root, doc.relPath));
   const nodes = [];
   const walk = node => { nodes.push(node); for (const child of node.childNodes ?? []) walk(child); };
   walk(dom);
   for (const node of nodes) {
     if (!node.tagName) continue;
-    if (['base', 'script', 'iframe', 'object', 'embed'].includes(node.tagName) || (node.tagName === 'meta' && /^(refresh|content-security-policy)$/i.test(attr(node, 'http-equiv')?.value ?? ''))) {
+    if (node.tagName === 'script' && interactive && attr(node, 'src')) {
+      set(node, 'src', await resource(attr(node, 'src').value, base));
+    }
+    if ((node.tagName === 'script' && !interactive) || ['base', 'iframe', 'object', 'embed'].includes(node.tagName) || (node.tagName === 'meta' && /^(refresh|content-security-policy)$/i.test(attr(node, 'http-equiv')?.value ?? ''))) {
       tree.detachNode(node); continue;
     }
     if (node.tagName === 'style') {
@@ -140,7 +144,7 @@ export async function buildPreview(library, id, limits = {}) {
     }
     if (node.tagName === 'a') {
       const href = attr(node, 'href');
-      if (href && href.value && !href.value.startsWith('#')) {
+      if (href && href.value && !href.value.startsWith('#') && !(interactive && /^javascript:/i.test(href.value))) {
         try {
           const { relative } = resolvePreviewReference(href.value, base, root);
           if (relative) set(node, 'data-library-path', relative);
@@ -150,7 +154,17 @@ export async function buildPreview(library, id, limits = {}) {
     }
   }
   const head = nodes.find(node => node.tagName === 'head');
-  const meta = tree.createElement('meta', HTML_NS, [{ name: 'http-equiv', value: 'Content-Security-Policy' }, { name: 'content', value: CSP }]);
+  const meta = tree.createElement('meta', HTML_NS, [{ name: 'http-equiv', value: 'Content-Security-Policy' }, { name: 'content', value: interactive ? CSP.replace("script-src 'none'", "script-src 'unsafe-inline' data:") : CSP }]);
   if (head.childNodes.length) tree.insertBefore(head, meta, head.childNodes[0]); else tree.appendChild(head, meta);
-  return { id, html: serialize(dom), warnings, bytes: total, assets: cache.size };
+  if (interactive) {
+    const bridge = tree.createElement('script', HTML_NS, []);
+    tree.insertText(bridge, `document.addEventListener('click', event => {
+      const link = event.target.closest?.('a[data-library-link]');
+      if (!link || event.defaultPrevented) return;
+      event.preventDefault();
+      parent.postMessage({type:'dsh-library-link', path:link.dataset.libraryPath, href:link.dataset.libraryLink}, '*');
+    });`);
+    tree.appendChild(nodes.find(node => node.tagName === 'body') ?? head, bridge);
+  }
+  return { id, interactive, html: serialize(dom), warnings, bytes: total, assets: cache.size };
 }

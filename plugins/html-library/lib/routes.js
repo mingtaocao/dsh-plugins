@@ -3,9 +3,9 @@
 import { promises as fs } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildPreview } from './preview.js';
-import { decodeBuffer, mimeFor, isTextualPath, normalizeCharset } from './mime.js';
+import { decodeBuffer, mimeFor, isHtmlPath, isTextualPath, normalizeCharset } from './mime.js';
 import { LibraryError } from './library.js';
 
 export const ROUTE_PREFIX = '/api/dsh-html-library';
@@ -139,11 +139,19 @@ function htmlContentType(charset) {
 }
 
 /** Open the validated local preview URL in the system browser, without a shell. */
-async function openInBrowser(file) {
+async function openInBrowser(file, browser) {
   const run = promisify(execFile);
-  const command = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'rundll32.exe' : 'xdg-open';
-  const args = process.platform === 'win32' ? ['url.dll,FileProtocolHandler', file] : [file];
-  await run(command, args, { timeout: 15000 });
+  if (process.platform === 'win32') {
+    // Pass the native filename as data; PowerShell never parses it as a command.
+    const target = browser === 'edge'
+      ? "$p.FileName='msedge.exe'; $p.Arguments=$env:DSH_HTML_OPEN_URL"
+      : "$p.FileName=$env:DSH_HTML_OPEN_PATH";
+    await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+      `$ErrorActionPreference='Stop'; $p=New-Object System.Diagnostics.ProcessStartInfo; $p.UseShellExecute=$true; ${target}; [System.Diagnostics.Process]::Start($p) | Out-Null`],
+      { env: { ...process.env, DSH_HTML_OPEN_PATH: fileURLToPath(file), DSH_HTML_OPEN_URL: file }, windowsHide: true, timeout: 15000 });
+    return;
+  }
+  await run(process.platform === 'darwin' ? 'open' : 'xdg-open', [file], { timeout: 15000 });
 }
 
 /** 组装路由表。 */
@@ -211,8 +219,10 @@ export function createRoutes(library, options = {}) {
 
     endpoint('POST', '/preview', async body => {
       if (typeof body.id !== 'string' || !body.id) throw new LibraryError('bad-request', '缺少文档 id');
-      return buildPreview(library, body.id);
+      return buildPreview(library, body.id, { interactive: body.interactive === true });
     }),
+
+    endpoint('POST', '/entries', body => library.editEntry(body)),
 
     endpoint('POST', '/rename', async body => {
       if (typeof body.id !== 'string' || !body.id) throw new LibraryError('bad-request', '缺少文档 id');
@@ -225,13 +235,14 @@ export function createRoutes(library, options = {}) {
       if (doc.status !== 'ok') throw new LibraryError('not-found', '源文件不可用，请重新索引');
       const routePath = [doc.rootId, ...doc.relPath.split('/')].map(encodeURIComponent).join('/');
       const local = await library.resolveSitePath(routePath);
+      if (!isHtmlPath(local.absolutePath)) throw new LibraryError('forbidden', '仅支持打开 HTML 文件');
       const url = pathToFileURL(local.absolutePath).href;
       try {
-        await (options.openExternal ?? openInBrowser)(url);
+        await (options.openExternal ?? openInBrowser)(url, body.browser === 'edge' ? 'edge' : 'default');
       } catch (error) {
         throw new LibraryError('internal', `无法打开系统浏览器：${String(error?.message ?? error)}`);
       }
-      return { id: doc.id, opened: true };
+      return { id: doc.id, opened: true, fileUrl: url };
     }),
 
     endpoint('POST', '/scan', async () => {
