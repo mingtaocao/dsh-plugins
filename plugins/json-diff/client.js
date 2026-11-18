@@ -120,15 +120,16 @@ window.__ModuleLoader__.load({
     }
     function Panel({ t }) {
       const [inputs, setInputs] = React.useState(['', '']);
-      const [snapshot, setResult] = React.useState(null);
-      const result = snapshot?.inputs === inputs ? snapshot : null;
+      // Keep the last completed comparison visible while the next one is pending.
+      const [result, setResult] = React.useState(null);
       const [selection, select] = React.useState(0);
       const left = React.useRef(null);
       const right = React.useRef(null);
       const [error, setError] = React.useState('');
       React.useEffect(() => {
-        setError('');
         if (!inputs.some(Boolean)) {
+          setError('');
+          select(0);
           setResult(null);
           return;
         }
@@ -137,8 +138,9 @@ window.__ModuleLoader__.load({
             const lines = inputs.map(textLines);
             const rows = compareRows(...lines);
             const changes = rows.flatMap((row, position) => row.type === 'same' ? [] : [{row, position}]);
-            select(0);
-            setResult({ inputs, lines, rows, changes });
+            select(i => Math.min(i, Math.max(0, changes.length - 1)));
+            setError('');
+            setResult({ lines, rows, changes });
           } catch (error) {
             if (!(error instanceof RangeError)) throw error;
             setResult(null);
