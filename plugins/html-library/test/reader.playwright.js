@@ -18,9 +18,6 @@ async page => {
   await page.waitForFunction(() => localStorage.getItem('dsh-html-library:nav-width') === '18');
   await page.locator('.dshl-navrow[title$="controls.html"]').click();
   const sandbox = mode => page.frameLocator('iframe[title="Controls"][sandbox="'+mode+'"]');
-  await sandbox('allow-same-origin').getByRole('button').click();
-  if (await sandbox('allow-same-origin').locator('output').innerText() !== 'Idle') throw new Error('Static preview executed JavaScript');
-  await page.getByRole('button', {name:/Enable document controls|启用此文档的交互/}).click();
   await sandbox('allow-scripts').getByRole('button').click();
   if (await sandbox('allow-scripts').locator('output').innerText() !== 'Clicked') throw new Error('Document control did not respond');
 };

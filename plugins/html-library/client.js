@@ -29,7 +29,6 @@ window.__ModuleLoader__.load({
     // ---------------------------------------------------------------- 文案
 
     const zh = {
-      'ui.edge': '用 Microsoft Edge 打开',
       'ui.resize': '调整目录宽度',
       'ui.more': '更多操作',
       'ui.file': '新建 HTML 文件',
@@ -37,9 +36,7 @@ window.__ModuleLoader__.load({
       'ui.delete': '删除',
       'ui.trash': '移到知识目录的 .dsh-html-trash？文件夹中的所有内容也会移入。',
       'ui.filename': '名称',
-      'ui.interactive': '启用此文档的交互',
-      'ui.static': '返回静态阅读',
-      'ui.browserSent': '已请求系统打开原文件。若未打开，可将下方地址粘贴到浏览器。',
+      'ui.browserSent': '已请求 Chrome 打开原文件。若未打开，可将下方地址粘贴到浏览器。',
       'ui.visit': '打开外部链接',
       'error.session': 'DSH 会话已失效，请重新打开 DSH 工作区后重试。',
       'error.access': 'DSH 拒绝了目录访问，请在拥有此工作区的会话中重新打开知识库。',
@@ -69,7 +66,7 @@ window.__ModuleLoader__.load({
       'actions.focus': '沉浸阅读',
       'actions.exitFocus': '退出沉浸阅读',
       'actions.refresh': '刷新预览',
-      'actions.openExternal': '在浏览器中打开',
+      'actions.openExternal': '在 Chrome 中打开',
       'actions.copyPath': '复制文件路径',
       'actions.favorite': '收藏',
       'actions.unfavorite': '取消收藏',
@@ -151,7 +148,6 @@ window.__ModuleLoader__.load({
     };
 
     const en = {
-      'ui.edge': 'Open with Microsoft Edge',
       'ui.resize': 'Resize folder tree',
       'ui.more': 'More actions',
       'ui.file': 'New HTML file',
@@ -159,9 +155,7 @@ window.__ModuleLoader__.load({
       'ui.delete': 'Delete',
       'ui.trash': 'Move to .dsh-html-trash in the library folder, including any folder contents?',
       'ui.filename': 'Name',
-      'ui.interactive': 'Enable document controls',
-      'ui.static': 'Return to static reading',
-      'ui.browserSent': 'Requested opening the original file. If it did not open, paste the address below into your browser.',
+      'ui.browserSent': 'Requested opening the original file in Chrome. If it did not open, paste the address below into your browser.',
       'ui.visit': 'Open external link',
       'error.session': 'Your DSH session has expired. Reopen the workspace and retry.',
       'error.access': 'DSH denied access. Reopen the library in the session that owns this workspace.',
@@ -192,7 +186,7 @@ window.__ModuleLoader__.load({
       'actions.focus': 'Focus reading',
       'actions.exitFocus': 'Exit focus',
       'actions.refresh': 'Reload preview',
-      'actions.openExternal': 'Open in browser',
+      'actions.openExternal': 'Open in Chrome',
       'actions.copyPath': 'Copy file path',
       'actions.favorite': 'Favorite',
       'actions.unfavorite': 'Unfavorite',
@@ -869,7 +863,6 @@ window.__ModuleLoader__.load({
       const [name, setName] = React.useState('');
       const [renaming, setRenaming] = React.useState(false);
       const frameRef = React.useRef(null);
-      const [interactive, setInteractive] = React.useState(false);
       const [externalLink, setExternalLink] = React.useState(null);
       const [browserAddress, setBrowserAddress] = React.useState('');
       const follow = (path, href) => {
@@ -878,31 +871,30 @@ window.__ModuleLoader__.load({
         else setNotice(t('reader.externalHint'));
       };
       React.useEffect(() => {
-        if (!interactive) return;
         const receive = event => {
           if (event.origin === 'null' && event.source === frameRef.current?.contentWindow &&
               event.data?.type === 'dsh-library-link') follow(event.data.path, event.data.href);
         };
         window.addEventListener('message', receive);
         return () => window.removeEventListener('message', receive);
-      }, [interactive, onNavigate]);
+      }, [onNavigate]);
       React.useEffect(() => {
         let alive = true;
         setName(doc?.name ?? '');
         setNotice(null);
         if (!doc || doc.status !== 'ok') return () => { alive = false; };
         setPreview({ state: 'loading', id: doc.id });
-        post('/preview', { id: doc.id, interactive }).then(value => {
+        post('/preview', { id: doc.id, interactive: true }).then(value => {
           if (alive) setPreview({ state: 'ready', ...value });
         }).catch(error => {
           if (alive) setPreview({ state: 'failed', id: doc.id, error: error.message });
         });
         return () => { alive = false; };
-      }, [doc?.id, doc?.mtime, doc?.status, iframeNonce, interactive]);
-      const openExternal = async browser => {
+      }, [doc?.id, doc?.mtime, doc?.status, iframeNonce]);
+      const openExternal = async () => {
         setOpening(true);
         try {
-          const result = await post('/open', { id: doc.id, browser: browser === 'edge' ? 'edge' : 'default' });
+          const result = await post('/open', { id: doc.id });
           setBrowserAddress(result.fileUrl || doc.absolutePath);
           setNotice(t('ui.browserSent'));
         }
@@ -929,8 +921,6 @@ window.__ModuleLoader__.load({
                 h('button', { type: 'submit', className: 'dshl-ghost', disabled: renaming || name === doc.name }, t('actions.rename'))),
               h('p', { className: 'dshl-root-path' }, t('reader.renameHint')))),
           h('div', { className: 'dshl-reader-actions' },
-            h('button', { type: 'button', className: 'dshl-ghost', 'aria-pressed': interactive,
-              onClick: () => { setExternalLink(null); setInteractive(!interactive); } }, t(interactive ? 'ui.static' : 'ui.interactive')),
             iconButton('star', doc.favorite ? t('actions.unfavorite') : t('actions.favorite'), () => onToggleFavorite(doc)),
             iconButton('tag', t('actions.tags'), onToggleTags),
             iconButton('refresh', t('actions.refresh'), onReload),
@@ -941,29 +931,16 @@ window.__ModuleLoader__.load({
         tagsOpen ? h(TagEditor, { t, tags: doc.tags, onSave: tags => onSaveTags(doc, tags) }) : null,
         notice ? h('div', { className: 'dshl-reader-error-body', role: 'alert' }, notice) : null,
         browserAddress ? h('input', { className: 'dshl-input', readOnly: true, value: browserAddress, 'aria-label': t('actions.copyPath'), onFocus: e => e.target.select() }) : null,
-        browserAddress && /^(?:[a-z]:[\\/]|\\\\)/i.test(doc.absolutePath) ?
-          h('button', { type: 'button', className: 'dshl-ghost', disabled: opening, onClick: () => openExternal('edge') }, t('ui.edge')) : null,
         externalLink ? h('a', { href: externalLink, target: '_blank', rel: 'noopener noreferrer' }, t('ui.visit')) : null,
         fail ? h('div', { className: 'dshl-reader-error', role: 'alert' },
           h('div', null, fail), h('button', { className: 'dshl-ghost', onClick: onRetry }, t('actions.retry')),
           h('button', { className: 'dshl-ghost', onClick: openExternal }, t('actions.openExternal'))) :
-        ready && !!preview.interactive === interactive ? h(React.Fragment, null,
+        ready && preview.interactive === true ? h(React.Fragment, null,
           preview.warnings.length ? h('details', { className: 'dshl-resource-warnings' },
             h('summary', null, t('reader.resourcesFailed', { n: preview.warnings.length })),
             preview.warnings.map((warning, i) => h('div', { key: i }, `${warning.path}: ${warning.message}`))) : null,
-          h('iframe', { key: `${doc.id}:${iframeNonce}:${interactive}`, ref: frameRef, className: 'dshl-frame dshl-memory-frame',
-            title: doc.title, srcDoc: preview.html, sandbox: interactive ? 'allow-scripts' : 'allow-same-origin', referrerPolicy: 'no-referrer',
-            onLoad: () => {
-              if (interactive) return;
-              const body = frameRef.current?.contentDocument;
-              body?.addEventListener('click', event => {
-                const link = event.target.closest?.('a[data-library-link]');
-                if (!link) return;
-                event.preventDefault();
-                const target = link.getAttribute('data-library-path');
-                follow(target, link.getAttribute('data-library-link'));
-              });
-            } })) : h('div', { className: 'dshl-reader-empty', role: 'status' }, t('reader.loading')));
+          h('iframe', { key: `${doc.id}:${iframeNonce}`, ref: frameRef, className: 'dshl-frame dshl-memory-frame',
+            title: doc.title, srcDoc: preview.html, sandbox: 'allow-scripts', referrerPolicy: 'no-referrer' })) : h('div', { className: 'dshl-reader-empty', role: 'status' }, t('reader.loading')));
     }
 
     function FirstRun({ t, busy, onPick, onAddManual }) {
