@@ -6,12 +6,23 @@ import { parse, serialize, defaultTreeAdapter as tree } from 'parse5';
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
 import { decodeBuffer, mimeFor } from './mime.js';
-import { LibraryError, isInside } from './library.js';
+import { LibraryError } from './library.js';
 
 const CSP = "default-src 'none'; script-src 'none'; style-src 'unsafe-inline' data:; img-src data: blob:; font-src data:; media-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'";
 const HTML_NS = 'http://www.w3.org/1999/xhtml';
 const attr = (node, name) => node.attrs?.find(entry => entry.name === name);
 const set = (node, name, value) => { const old = attr(node, name); if (old) old.value = value; else node.attrs.push({ name, value }); };
+
+export function resolvePreviewReference(reference, base, root, windows = process.platform === 'win32') {
+  const url = new URL(reference, base);
+  if (url.protocol !== 'file:') throw new Error('远程资源默认禁用');
+  const paths = windows ? path.win32 : path.posix;
+  const relative = paths.relative(root, fileURLToPath(url, { windows }));
+  if (relative === '..' || relative.startsWith(`..${paths.sep}`) || paths.isAbsolute(relative)) {
+    throw new Error('资源超出所选目录');
+  }
+  return { url, relative: relative.split(paths.sep).join('/') };
+}
 
 export async function buildPreview(library, id, limits = {}) {
   const doc = await library.getDocument(id);
@@ -41,17 +52,12 @@ export async function buildPreview(library, id, limits = {}) {
       return buffer.subarray(0, bytesRead);
     } finally { await handle.close(); }
   };
-  const resolve = async (reference, base) => {
-    const url = new URL(reference, base);
-    if (url.protocol !== 'file:') throw new Error('远程资源默认禁用');
-    const target = fileURLToPath(url);
-    if (!isInside(root, target)) throw new Error('资源超出所选目录');
-    return { file: await locate(path.relative(root, target).split(path.sep).join('/')), url };
-  };
   const resource = async (reference, base, asCss = false, stack = []) => {
     if (!reference || reference.startsWith('#') || /^data:/i.test(reference)) return reference;
     try {
-      const { file, url } = await resolve(reference, base);
+      const { relative, url } = resolvePreviewReference(reference, base, root);
+      // Resolve against the configured root and check the real file before reading it.
+      const file = await locate(relative);
       const key = `${file.absolutePath}:${asCss}`;
       if (stack.includes(key)) throw new Error('循环引用的样式表');
       if (!cache.has(key)) {
@@ -136,8 +142,8 @@ export async function buildPreview(library, id, limits = {}) {
       const href = attr(node, 'href');
       if (href && href.value && !href.value.startsWith('#')) {
         try {
-          const url = new URL(href.value, base);
-          if (url.protocol === 'file:' && isInside(root, fileURLToPath(url))) set(node, 'data-library-path', path.relative(root, fileURLToPath(url)).split(path.sep).join('/'));
+          const { relative } = resolvePreviewReference(href.value, base, root);
+          if (relative) set(node, 'data-library-path', relative);
         } catch { /* Invalid links stay inert in the preview. */ }
         set(node, 'data-library-link', href.value); href.value = '#';
       }
