@@ -4,25 +4,25 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 const ctx = vm.createContext({ window: { __ModuleLoader__: { load() {} } } });
 vm.runInContext(readFileSync(new URL('../client.js', import.meta.url), 'utf8'), ctx);
-const lines = input => Array.from(ctx.jsonDiffLines(input, true));
-const types = (a, b, json = true) => Array.from(ctx.jsonDiffRows(a, b, json), row => row.type);
-test('JSON formatting ignores layout and preserves numeric literals, escapes and duplicate keys', () => {
-  assert.deepEqual(lines(' { "id": 9007199254740993 , "id" : "a, b", "x":[] } '),
-    ['{', '  "id": 9007199254740993,', '  "id": "a, b",', '  "x": []', '}']);
-  assert.throws(() => lines('{"id":}'));
+const lines = input => Array.from(ctx.textLines(input));
+const types = (a, b) => Array.from(ctx.compareRows(lines(a), lines(b)), row => row.type);
+
+test('compares literal text including blank lines, indentation, punctuation and invalid syntax', () => {
+  assert.deepEqual(lines('A\r\n B\r'), ['A',' B','']);
+  assert.deepEqual(types(' {oops,', ' {oops'), ['change']);
+  assert.deepEqual(types('a', ' a'), ['change']);
+  assert.deepEqual(types('a', 'a\n'), ['same','add']);
 });
-test('aligns unchanged lines around field addition and deletion', () => {
-  const a = lines('{"x":1}'), b = lines('{"x":1,"y":2}');
-  assert.deepEqual(types(a,b), ['same','same','add','same']);
-  assert.deepEqual(types(b,a), ['same','same','remove','same']);
-  assert.deepEqual(types(lines('[1,2]'),lines('[1,3]')), ['same','same','change','same']);
+
+test('aligns mixed changes and one-sided inputs', () => {
+  assert.deepEqual(types('A\n旧\nB', 'A\n新\nB\nC'), ['same','change','same','add']);
+  assert.deepEqual(types('', 'a\nb'), ['add','add']);
+  assert.deepEqual(types('a', ''), ['remove']);
+  assert.deepEqual(types('', ''), []);
 });
-test('plain text handles empty inputs, CRLF and literal commas', () => {
-  assert.deepEqual(Array.from(ctx.jsonDiffLines('',false)), []);
-  assert.deepEqual(Array.from(ctx.jsonDiffLines('A\r\nB',false)), ['A','B']);
-  assert.deepEqual(types(['a,'],['a'],false), ['change']);
-  assert.deepEqual(types([],['a','b'],false), ['add','add']);
-});
-test('rejects excessively expensive comparisons before allocating the table', () => {
-  assert.throws(() => types(Array(3000).fill('a'), Array(3000).fill('b')));
+
+test('bounds input and alignment costs', () => {
+  assert.throws(() => lines('a'.repeat(500001)));
+  assert.throws(() => lines('\n'.repeat(5000)));
+  assert.throws(() => types('a\n'.repeat(3000), 'b\n'.repeat(3000)));
 });

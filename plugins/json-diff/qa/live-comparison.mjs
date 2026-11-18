@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 export async function verifyLiveComparison(page) {
   const panel = page.locator('.jd-panel');
   const [left, right] = await panel.locator('textarea').all();
-  await left.fill('{"count":1}');
-  await right.fill('{"count":2,"extra":true}');
+  assert.equal(await panel.getByRole('combobox').count(), 0);
+  await left.fill('开始\n会议在周三\n结束');
+  await right.fill('开始\n会议在周五\n结束\n附注');
   await panel.locator('.jd-plus').nth(1).waitFor();
   assert.equal(await panel.locator('.jd-minus').count(), 1);
   for (const divider of await panel.getByRole('separator').all()) {
@@ -25,15 +26,17 @@ export async function verifyLiveComparison(page) {
   }
   await panel.getByRole('checkbox').check();
   assert.equal(await panel.locator('tbody tr').count(), 2);
-  await right.fill('invalid');
-  await panel.getByRole('alert').waitFor();
-  await right.fill('{ "count": 1 }');
+  assert.equal(await panel.locator('.jd-minus mark').innerText(), '三');
+  assert.equal(await panel.locator('.jd-plus mark').innerText(), '五');
+  await right.fill('开始\n会议在周三\n结束');
   await panel.getByRole('status').filter({hasText:/match|一致/}).waitFor();
   await right.fill('');
+  await panel.locator('.jd-minus').nth(2).waitFor();
+  await left.fill('');
   await panel.locator('table').waitFor({state:'hidden'});
-  await panel.getByRole('combobox').selectOption('text');
-  await left.fill('alpha');
-  await right.fill('alpha\nbeta');
-  await panel.locator('.jd-plus').waitFor();
-  assert.equal(await panel.locator('.jd-minus').count(), 0);
+  await left.fill('a'.repeat(500001));
+  await panel.getByRole('alert').waitFor();
+  await left.fill('{invalid');
+  await right.fill('{invalid');
+  await panel.getByRole('status').filter({hasText:/match|一致/}).waitFor();
 }

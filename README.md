@@ -10,7 +10,7 @@
 | --- | --- | --- | --- |
 | HTML Library | [plugins/html-library](plugins/html-library/README.md) | 本地 HTML 知识库：浏览阅读、中文检索、收藏与标签 | 开发预览，待真实宿主验收 |
 | Task Manager | [plugins/task-manager](plugins/task-manager/README.md) | 多项目任务、看板与四象限 | 开发预览，待 UI 验收 |
-| 文件对比 | [plugins/json-diff](plugins/json-diff/README.md) | 左右粘贴 JSON 或纯文本，逐行查看差异 | 开发预览 |
+| 文件对比 | [plugins/json-diff](plugins/json-diff/README.md) | 左右粘贴两版原文，逐行查看差异 | 开发预览 |
 
 ## 开发流程
 
