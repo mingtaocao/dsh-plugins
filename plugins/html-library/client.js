@@ -29,6 +29,8 @@ window.__ModuleLoader__.load({
     // ---------------------------------------------------------------- 文案
 
     const zh = {
+      'error.session': 'DSH 会话已失效，请重新打开 DSH 工作区后重试。',
+      'error.access': 'DSH 拒绝了目录访问，请在拥有此工作区的会话中重新打开知识库。',
       'entry.label': '知识库',
       'actions.rename': '重命名',
       'actions.filename': '文件名',
@@ -137,6 +139,8 @@ window.__ModuleLoader__.load({
     };
 
     const en = {
+      'error.session': 'Your DSH session has expired. Reopen the workspace and retry.',
+      'error.access': 'DSH denied access. Reopen the library in the session that owns this workspace.',
       'entry.label': 'Library',
       'actions.rename': 'Rename',
       'actions.filename': 'File name',
@@ -908,7 +912,7 @@ window.__ModuleLoader__.load({
           const value = await readSnapshot();
           setSnapshot({ status: 'ready', data: value });
         } catch (error) {
-          setSnapshot({ status: 'failed', error: String(error?.message ?? error) });
+          setSnapshot({ status: 'failed', error: String(error?.message ?? error), httpStatus: error?.status });
         }
       }, []);
 
@@ -1208,7 +1212,15 @@ window.__ModuleLoader__.load({
             {
               type: 'button',
               className: `dshl-ghost${rootsOpen ? ' is-active' : ''}`,
-              onClick: () => { setRootsOpen((value) => !value); setFocus(false); },
+              'aria-expanded': rootsOpen,
+              onClick: () => {
+                setRootsOpen(!rootsOpen);
+                setFocus(false);
+                if (!rootsOpen && snapshot.status === 'failed') {
+                  setSnapshot({ status: 'loading' });
+                  loadSnapshot();
+                }
+              },
             },
             h(Icon, { name: 'folder', size: 14 }),
             t('actions.manageRoots'),
@@ -1236,10 +1248,13 @@ window.__ModuleLoader__.load({
         content = h(
           'div',
           { className: 'dshl-center-note' },
-          h('div', null, t('error.load', { message: snapshot.error ?? '' })),
+          rootsOpen ? h('strong', null, t('actions.manageRoots')) : null,
+          h('div', { role: 'alert' }, t('error.load', { message:
+            snapshot.httpStatus === 401 ? t('error.session') :
+            snapshot.httpStatus === 403 ? t('error.access') : snapshot.error ?? '' })),
           h('button', { type: 'button', className: 'dshl-ghost', onClick: loadSnapshot }, t('actions.retry')),
         );
-      } else if (snapshot.data.roots.length === 0) {
+      } else if (snapshot.data.roots.length === 0 && !rootsOpen) {
         content = h(FirstRun, { t, busy, onPick: pickRoot, onAddManual: addRootManual });
       } else {
         content = h(

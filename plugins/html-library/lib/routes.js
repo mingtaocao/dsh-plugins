@@ -1,18 +1,4 @@
-/**
- * HTML 知识库 —— 宿主侧 HTTP 路由（Web GUI 唯一的数据通道）。
- *
- * 两条路由：
- *  - `/api/dsh-html-library/*`  JSON API（快照 / 列表检索 / 目录管理 / 元数据）；
- *  - `/api/dsh-html-library/site/<rootId>/<相对路径>` 只读静态资源，
- *    按字节原样返回 HTML 与其相对 CSS / 图片 / 字体 —— 预览保真的关键。
- *
- * 准入：JSON 路由优先委托官方 `connection.requestRejection()`（Host/Origin 检查 +
- * 浏览器会话鉴权，与官方 `/api` 同一套口径），服务缺席时退回纯回环判定。
- * 静态资源额外接受沙箱 iframe 的 `Origin: null` 子资源请求，但仍只服务本机回环
- * 且只读、且必须落在已配置的根目录内。
- *
- * @module dsh-html-library/routes
- */
+/** Owner-only DSH Connection Fetch endpoints and the legacy static preview handler. */
 
 import { promises as fs } from 'node:fs';
 import { execFile } from 'node:child_process';
@@ -93,34 +79,6 @@ function isLoopbackHostname(hostname) {
 }
 
 /**
- * JSON 路由准入。返回 `401 | 403 | undefined`。
- *
- * @param {() => object | undefined} getConnection 惰性读取 `connection` 服务。
- */
-export function createAuthorize(getConnection = () => undefined) {
-  return function authorize(req) {
-    let connection;
-    try {
-      connection = getConnection();
-    } catch {
-      connection = undefined;
-    }
-    if (connection === undefined || typeof connection.requestRejection !== 'function') {
-      return isLoopbackRequest(req) ? undefined : 403;
-    }
-    let rejection;
-    try {
-      rejection = connection.requestRejection({ headers: req.headers ?? {} });
-    } catch {
-      return isLoopbackRequest(req) ? undefined : 403;
-    }
-    if (rejection === undefined) return undefined;
-    if (rejection === 401 || rejection === 403) return rejection;
-    return isLoopbackRequest(req) ? undefined : 403;
-  };
-}
-
-/**
  * 静态资源准入：只认本机回环。
  *
  * 沙箱 iframe（不带 `allow-same-origin`）的子资源请求来源是不透明源，
@@ -150,17 +108,11 @@ function statusForCode(code) {
   return 400;
 }
 
-function rejectionStatus(authorize, req) {
-  const rejection = authorize(req);
-  if (rejection === 401) return 401;
-  if (rejection === 403) return 403;
-  return undefined;
-}
-
-async function readJsonBody(req) {
+async function readJsonBody(request) {
+  if (!request.body) return {};
   const chunks = [];
   let size = 0;
-  for await (const chunk of req) {
+  for await (const chunk of request.body) {
     size += chunk.length;
     if (size > MAX_BODY_BYTES) throw new LibraryError('payload-too-large', '请求体过大');
     chunks.push(chunk);
@@ -196,40 +148,28 @@ async function openInBrowser(file) {
 
 /** 组装路由表。 */
 export function createRoutes(library, options = {}) {
-  const authorize = options.authorize ?? createAuthorize();
-
-  /** JSON 端点包装：准入 → 方法 → 信封 → 错误归一。 */
   function endpoint(method, suffix, handle) {
     return {
-      kind: 'exact',
       path: `${ROUTE_PREFIX}${suffix}`,
-      handler: async (req, res) => {
-        const rejection = rejectionStatus(authorize, req);
-        if (rejection !== undefined) {
-          writeFailure(res, rejection, rejection === 401 ? 'unauthorized' : 'forbidden', '请从 DSH 页面内访问');
-          return;
-        }
-        if (req.method !== method) {
-          res.setHeader('allow', method);
-          writeFailure(res, 405, 'method-not-allowed', `请用 ${method}`);
-          return;
-        }
+      methods: [method],
+      requestBody: method === 'GET' ? 'buffered' : 'streaming',
+      async fetch(request) {
+        const headers = { 'cache-control': 'no-store' };
         try {
-          const body = method === 'GET' ? {} : await readJsonBody(req);
-          const value = await handle(body, req);
-          writeJson(res, 200, { ok: true, value });
+          const body = method === 'GET' ? {} : await readJsonBody(request);
+          const value = await handle(body, request);
+          return Response.json({ ok: true, value }, { headers });
         } catch (error) {
           const code = error instanceof LibraryError ? error.code : 'internal';
-          if (code === 'internal') {
-            options.log?.(`请求处理失败：${String(error?.stack ?? error)}`);
-          }
-          writeFailure(res, statusForCode(code), code, String(error?.message ?? error));
+          if (code === 'internal') options.log?.(`请求处理失败：${String(error?.stack ?? error)}`);
+          return Response.json({ ok: false, error: { code, message: String(error?.message ?? error) } },
+            { status: statusForCode(code), headers });
         }
       },
     };
   }
 
-  const routes = [
+  return [
     endpoint('GET', '/health', async () => ({
       plugin: 'dsh-html-library',
       serverTime: new Date().toISOString(),
@@ -279,7 +219,7 @@ export function createRoutes(library, options = {}) {
       return library.renameDocument(body.id, body.name);
     }),
 
-    endpoint('POST', '/open', async (body, req) => {
+    endpoint('POST', '/open', async (body) => {
       if (typeof body.id !== 'string' || body.id === '') throw new LibraryError('bad-request', '缺少文档 id');
       const doc = await library.getDocument(body.id);
       if (doc.status !== 'ok') throw new LibraryError('not-found', '源文件不可用，请重新索引');
@@ -314,9 +254,10 @@ export function createRoutes(library, options = {}) {
       return library.recordRead(body.id, Number(body.scrollRatio ?? '0'));
     }),
   ];
+}
 
-  // 只读静态资源：与文档同目录的相对 URL 才能保住 CSS / 图片 / 字体。
-  if (options.legacyStatic === true) routes.push({
+export function createLegacySiteRoute(library) {
+  return {
     kind: 'prefix',
     path: SITE_PREFIX,
     handler: async (req, res) => {
@@ -404,9 +345,7 @@ export function createRoutes(library, options = {}) {
       }
       res.end(buffer);
     },
-  });
-
-  return routes;
+  };
 }
 
 function isLoopbackOrigin(origin) {

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createLibrary } from '../lib/library.js';
-import { createRoutes, documentCsp, ROUTE_PREFIX, SITE_PREFIX } from '../lib/routes.js';
+import { createRoutes, createLegacySiteRoute, documentCsp, ROUTE_PREFIX, SITE_PREFIX } from '../lib/routes.js';
 
 const tempDirs = new Set();
 
@@ -40,6 +40,10 @@ function createRes() {
 
 async function call(route, options = {}) {
   const { method = 'GET', url = '/', headers = {}, body = undefined, remoteAddress = '127.0.0.1' } = options;
+  if (route.fetch) {
+    const response = await route.fetch(new Request(new URL(url, 'http://localhost'), { method, headers, body }));
+    return { statusCode: response.status, headers: response.headers, body: await response.text() };
+  }
   const request = {
     method,
     url,
@@ -78,9 +82,9 @@ async function setup() {
   await library.scan();
   const snapshot = await library.snapshot();
   const rootId = snapshot.roots[0].id;
-  const routes = createRoutes(library, { authorize: () => undefined, legacyStatic: true, log: () => {} });
-  const site = routes.find((route) => route.kind === 'prefix' && route.path === SITE_PREFIX);
-  const endpoint = (suffix) => routes.find((route) => route.kind === 'exact' && route.path === `${ROUTE_PREFIX}${suffix}`);
+  const routes = createRoutes(library);
+  const site = createLegacySiteRoute(library);
+  const endpoint = (suffix) => routes.find((route) => route.path === `${ROUTE_PREFIX}${suffix}`);
   return { corpus, library, dataDir, rootId, site, endpoint, html };
 }
 
@@ -209,8 +213,8 @@ test('JSON endpoints: snapshot, search, favorite and method guard', async () => 
   });
   assert.equal(jsonOf(tagged).value.total, 1);
 
-  const wrongMethod = await call(endpoint('/snapshot'), { method: 'POST', body: '{}' });
-  assert.equal(wrongMethod.statusCode, 405);
+  assert.deepEqual(endpoint('/snapshot').methods, ['GET']);
+  assert.deepEqual(endpoint('/favorite').methods, ['POST']);
 
   const health = jsonOf(await call(endpoint('/health')));
   assert.equal(health.value.plugin, 'dsh-html-library');
@@ -227,31 +231,26 @@ test('CSP falls back to self when the origin is unknown', () => {
   assert.ok(!documentCsp('').includes('frame-ancestors'));
 });
 
-test('authorized rejection is applied before any handler work', async () => {
-  const { corpus } = await setup();
-  const dataDir = await makeTemp('routes-denied');
-  const library = createLibrary({ dir: dataDir, config: {}, log: () => {} });
-  await library.addRoot(corpus);
-  await library.scan();
-  const routes = createRoutes(library, { authorize: () => 403, log: () => {} });
-  const denied = await call(routes.find((route) => route.path === `${ROUTE_PREFIX}/snapshot`));
-  assert.equal(denied.statusCode, 403);
-  assert.equal(jsonOf(denied).error.code, 'forbidden');
+test('directory mutations reject oversized and malformed JSON before touching the library', async () => {
+  const { endpoint, library } = await setup();
+  const add = endpoint('/roots/add');
+  const before = await library.snapshot();
+  for (const [body, code] of [['{', 'invalid-json'], ['x'.repeat(1024 * 1024 + 1), 'payload-too-large']]) {
+    assert.equal(jsonOf(await call(add, { method: 'POST', body })).error.code, code);
+  }
+  assert.deepEqual((await library.snapshot()).roots, before.roots);
 });
 
-
-test('browser open validates indexed files, honors authorization and reports launcher failures', async () => {
+test('browser open validates indexed files, and reports launcher failures', async () => {
   const { library, corpus, rootId } = await setup();
   const doc = (await library.listDocuments()).items[0];
   const opened = [];
   const route = (options = {}) => createRoutes(library, {
-    authorize: () => undefined, openExternal: async url => opened.push(url), ...options,
+    openExternal: async url => opened.push(url), ...options,
   }).find(entry => entry.path === `${ROUTE_PREFIX}/open`);
   const request = { method: 'POST', body: JSON.stringify({ id: doc.id }) };
   assert.equal((await call(route(), request)).statusCode, 200);
   assert.deepEqual(opened, [pathToFileURL(await fs.realpath(path.join(corpus, 'page.html'))).href]);
-  assert.equal((await call(route({ authorize: () => 401 }), request)).statusCode, 401);
-  assert.equal(opened.length, 1);
   const failure = await call(route({ openExternal: async () => { throw new Error('launcher unavailable'); } }), request);
   assert.equal(failure.statusCode, 500);
   assert.match(jsonOf(failure).error.message, /launcher unavailable/);

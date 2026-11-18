@@ -42,6 +42,8 @@ node --check client.js
 
 本地包更新后需在 DSH 插件管理中停用再启用知识库，使宿主模块与客户端一起加载。
 
+目录和预览请求通过 DSH 的 `connection.fetch` 接口校验工作区会话。如果知识库提示会话失效，重新打开 DSH 工作区，再点「管理目录」会重新读取目录并进入管理页。如果仍出现旧版提示「请从 DSH 页面内访问」，请核对 DSH 加载的本地插件目录和版本，再停用并重新启用插件。
+
 ## 配置与数据
 
 `cordis.patch.yml` 的配置包括 `roots`、`exclude`、`watchIntervalMs`，并支持
