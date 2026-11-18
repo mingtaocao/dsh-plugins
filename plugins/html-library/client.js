@@ -29,6 +29,18 @@ window.__ModuleLoader__.load({
     // ---------------------------------------------------------------- 文案
 
     const zh = {
+      'ui.edge': '用 Microsoft Edge 打开',
+      'ui.resize': '调整目录宽度',
+      'ui.more': '更多操作',
+      'ui.file': '新建 HTML 文件',
+      'ui.folder': '新建文件夹',
+      'ui.delete': '删除',
+      'ui.trash': '移到知识目录的 .dsh-html-trash？文件夹中的所有内容也会移入。',
+      'ui.filename': '名称',
+      'ui.interactive': '启用此文档的交互',
+      'ui.static': '返回静态阅读',
+      'ui.browserSent': '已请求系统打开原文件。若未打开，可将下方地址粘贴到浏览器。',
+      'ui.visit': '打开外部链接',
       'error.session': 'DSH 会话已失效，请重新打开 DSH 工作区后重试。',
       'error.access': 'DSH 拒绝了目录访问，请在拥有此工作区的会话中重新打开知识库。',
       'entry.label': '知识库',
@@ -93,7 +105,7 @@ window.__ModuleLoader__.load({
       'roots.count': '{n} 篇文档',
       'roots.missing': '{n} 篇丢失',
       'first.title': '把你的 HTML 页面收进来',
-      'first.body': '选择一个存放 HTML 的目录，知识库会递归发现 .html / .htm 文件，并按原样在 DSH 里阅读。文件不会被移动、改名或改写。',
+      'first.body': '选择一个存放 HTML 的目录，知识库会递归发现 .html / .htm 文件，并按原样在 DSH 里阅读。扫描和阅读只会读取文件。',
       'first.action': '选择知识目录',
       'first.hint': '支持多个目录；索引保存在 DSH 数据目录，不写入你的文件夹。',
       'reader.empty': '从左侧选择一篇文档开始阅读。',
@@ -139,6 +151,18 @@ window.__ModuleLoader__.load({
     };
 
     const en = {
+      'ui.edge': 'Open with Microsoft Edge',
+      'ui.resize': 'Resize folder tree',
+      'ui.more': 'More actions',
+      'ui.file': 'New HTML file',
+      'ui.folder': 'New folder',
+      'ui.delete': 'Delete',
+      'ui.trash': 'Move to .dsh-html-trash in the library folder, including any folder contents?',
+      'ui.filename': 'Name',
+      'ui.interactive': 'Enable document controls',
+      'ui.static': 'Return to static reading',
+      'ui.browserSent': 'Requested opening the original file. If it did not open, paste the address below into your browser.',
+      'ui.visit': 'Open external link',
       'error.session': 'Your DSH session has expired. Reopen the workspace and retry.',
       'error.access': 'DSH denied access. Reopen the library in the session that owns this workspace.',
       'entry.label': 'Library',
@@ -197,14 +221,14 @@ window.__ModuleLoader__.load({
       'list.emptyFolder': 'No HTML files in this folder.',
       'list.emptyTag': 'No documents tagged “{tag}”.',
       'roots.title': 'Knowledge folders',
-      'roots.hint': 'Read-only scan. Files are never modified or moved; removing a folder only drops its index.',
+      'roots.hint': 'Scanning reads your files. Removing a library folder drops its index and keeps the files on disk.',
       'roots.empty': 'No folders added yet.',
       'roots.manual': 'Or paste an absolute path',
       'roots.manualPlaceholder': '/Users/you/Documents/knowledge-html',
       'roots.count': '{n} docs',
       'roots.missing': '{n} missing',
       'first.title': 'Bring your HTML pages in',
-      'first.body': 'Pick a folder that holds your HTML pages. The library finds .html / .htm files recursively and renders them as-is inside DSH. Files are never moved, renamed, or rewritten.',
+      'first.body': 'Pick a folder that holds your HTML pages. The library finds .html / .htm files recursively and renders them as-is inside DSH. Scanning and reading leave your files unchanged.',
       'first.action': 'Choose knowledge folder',
       'first.hint': 'Multiple folders are supported; the index lives in the DSH data directory, not in your folders.',
       'reader.empty': 'Pick a document to start reading.',
@@ -466,12 +490,77 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function NavColumn({ t, snapshot, view, onSelect, selectedId, onOpen }) {
+    function SplitHandle({ t, width, onResize }) {
+      const clamp = value => Math.min(65, Math.max(18, value));
+      return h('div', { className: 'dshl-split', role: 'separator', tabIndex: 0, 'aria-orientation': 'vertical',
+        'aria-label': t('ui.resize'), 'aria-valuemin': 18, 'aria-valuemax': 65, 'aria-valuenow': width,
+        onPointerDown: event => { if (event.button === 0) event.currentTarget.setPointerCapture(event.pointerId); },
+        onPointerMove: event => {
+          if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+          const bounds = event.currentTarget.parentElement.getBoundingClientRect();
+          if (bounds.width) onResize(clamp(Math.round((event.clientX - bounds.left) * 100 / bounds.width)));
+        },
+        onKeyDown: event => {
+          if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+          event.preventDefault();
+          onResize(clamp(({ ArrowLeft: width - 2, ArrowRight: width + 2, Home: 18, End: 65 })[event.key]));
+        } });
+    }
+
+    function NavColumn({ t, snapshot, view, onSelect, selectedId, onOpen, onEdit }) {
       const counts = snapshot.counts;
       const folders = snapshot.facets.folders;
       const tags = snapshot.facets.tags;
       // 折叠状态只记在当前面板生命周期里；刷新后默认全部展开。
       const [collapsed, setCollapsed] = React.useState(() => new Set());
+
+      const [menu, setMenu] = React.useState(null);
+      const [action, setAction] = React.useState(null);
+      const [name, setName] = React.useState('');
+      const [error, setError] = React.useState('');
+      const [pending, setPending] = React.useState(false);
+      function controls(rootId, rel, kind) {
+        const key = JSON.stringify([rootId, rel, kind]);
+        const toggle = h('button', { type: 'button', className: 'dshl-tree-more', disabled: pending,
+          title: t('ui.more'), 'aria-label': t('ui.more') + ' · ' + (rel || snapshot.roots.find(r => r.id === rootId)?.label),
+          'aria-expanded': menu === key, onClick: () => {
+            setMenu(menu === key ? null : key); setAction(null); setError('');
+          } }, '⋯');
+        if (menu !== key) return { toggle, panel: null };
+        const choose = value => { setAction(value); setName(''); setError(''); };
+        const submit = async event => {
+          event.preventDefault();
+          if (pending) return;
+          const removing = action === 'delete';
+          const segments = rel.split('/');
+          const entry = { rootId, folder: removing ? segments.slice(0, -1).join('/') : rel,
+            name: removing ? segments.at(-1) : name.trim(), action: removing ? 'delete' : 'create',
+            kind: removing ? kind : action };
+          setPending(true);
+          try {
+            await onEdit(entry);
+            setCollapsed(previous => {
+              const next = new Set(previous); next.delete(folderKey(rootId, rel)); return next;
+            });
+            setMenu(null);
+          } catch (cause) { setError(cause.message); }
+          finally { setPending(false); }
+        };
+        const operations = kind === 'folder' ? ['file', 'folder'] : [];
+        if (rel) operations.push('delete');
+        const panel = h('div', { className: 'dshl-entry-options' },
+          action === null ? operations.map(op => h('button', { type: 'button', key: op, className: 'dshl-ghost',
+            onClick: () => choose(op) }, t('ui.' + op))) :
+          h('form', { onSubmit: submit },
+            action === 'delete' ? h('span', null, rel + ' — ' + t('ui.trash')) :
+              h('input', { autoFocus: true, required: true, className: 'dshl-input', value: name,
+                'aria-label': t('ui.filename'), placeholder: action === 'file' ? 'index.html' : t('ui.filename'),
+                onChange: event => setName(event.target.value) }),
+            h('button', { type: 'submit', className: 'dshl-ghost', disabled: pending }, t('ui.' + action)),
+            h('button', { type: 'button', className: 'dshl-ghost', disabled: pending, onClick: () => setMenu(null) }, t('actions.cancel'))),
+          error ? h('span', { role: 'alert' }, error) : null);
+        return { toggle, panel };
+      }
 
       const folderKey = (rootId, relDir) => `${rootId}\u0000${relDir}`;
       const toggleFolder = (rootId, relDir) => {
@@ -492,27 +581,46 @@ window.__ModuleLoader__.load({
         return true;
       };
 
-      const renderFolder = (root, relDir = '', depth = 0) => {
+      const tree = React.useMemo(() => {
+        const byParent = new Map();
+        const group = (rootId, relDir) => {
+          const key = folderKey(rootId, relDir);
+          if (!byParent.has(key)) byParent.set(key, { folders: [], files: [] });
+          return byParent.get(key);
+        };
+        for (const folder of folders) {
+          if (folder.relDir) group(folder.rootId, folder.relDir.split('/').slice(0, -1).join('/')).folders.push(folder);
+        }
+        for (const doc of snapshot.treeDocuments ?? []) group(doc.rootId, doc.folder).files.push(doc);
+        for (const group of byParent.values()) group.files.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+        return byParent;
+      }, [folders, snapshot.treeDocuments]);
+
+      const renderFolder = (root, relDir = '', depth = 0, count = root.count) => {
         const key = folderKey(root.id, relDir);
         const folded = collapsed.has(key);
         const target = relDir === '' ? { mode: 'root', rootId: root.id } : { mode: 'folder', rootId: root.id, folder: relDir };
-        const children = folders.filter(folder => folder.rootId === root.id && folder.relDir !== '' &&
-          folder.relDir.split('/').slice(0, -1).join('/') === relDir);
-        const files = (snapshot.treeDocuments ?? []).filter(doc => doc.rootId === root.id && doc.folder === relDir)
-          .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+        const children = tree.get(key);
+        const menu = controls(root.id, relDir, 'folder');
         return h('div', { key, className: 'dshl-tree-folder' },
           h('div', { className: 'dshl-navline' },
             h('button', { type: 'button', className: `dshl-navcaret${folded ? ' is-collapsed' : ''}`,
               style: { marginLeft: `${depth * 12}px` }, 'aria-label': relDir || root.label,
               'aria-expanded': !folded, onClick: () => toggleFolder(root.id, relDir) }, h(Icon, { name: 'chevron', size: 12 })),
             h(NavRow, { label: relDir ? relDir.split('/').pop() : root.label, icon: 'folder',
-              count: relDir ? folders.find(folder => folder.rootId === root.id && folder.relDir === relDir)?.count : root.count,
-              active: isCurrent(target), title: relDir || root.label, onClick: () => onSelect(target) })),
+              count,
+              active: isCurrent(target), title: relDir || root.label, onClick: () => onSelect(target) }), menu.toggle), menu.panel,
           folded ? null : h(React.Fragment, null,
-            children.map(folder => renderFolder(root, folder.relDir, depth + 1)),
-            files.map(doc => h(NavRow, { key: doc.id, label: doc.name, icon: 'book', depth: depth + 1,
-              title: `${doc.title} · ${doc.relPath}`, active: selectedId === doc.id,
-              onClick: () => onOpen(doc) }))));
+            children?.folders.map(folder => renderFolder(root, folder.relDir, depth + 1, folder.count)),
+            children?.files.map(doc => {
+              const actions = controls(root.id, doc.relPath, 'file');
+              return h('div', { key: doc.id },
+                h('div', { className: 'dshl-navline' },
+                  h(NavRow, { label: doc.name, icon: 'book', depth: depth + 1,
+                    title: `${doc.title} · ${doc.relPath}`, active: selectedId === doc.id, onClick: () => onOpen(doc) }),
+                  actions.toggle), actions.panel);
+            })));
+
       };
 
       return h(
@@ -761,23 +869,44 @@ window.__ModuleLoader__.load({
       const [name, setName] = React.useState('');
       const [renaming, setRenaming] = React.useState(false);
       const frameRef = React.useRef(null);
+      const [interactive, setInteractive] = React.useState(false);
+      const [externalLink, setExternalLink] = React.useState(null);
+      const [browserAddress, setBrowserAddress] = React.useState('');
+      const follow = (path, href) => {
+        if (typeof path === 'string' && path) onNavigate(doc.rootId, path);
+        else if (typeof href === 'string' && /^https?:\/\//i.test(href)) setExternalLink(href);
+        else setNotice(t('reader.externalHint'));
+      };
+      React.useEffect(() => {
+        if (!interactive) return;
+        const receive = event => {
+          if (event.origin === 'null' && event.source === frameRef.current?.contentWindow &&
+              event.data?.type === 'dsh-library-link') follow(event.data.path, event.data.href);
+        };
+        window.addEventListener('message', receive);
+        return () => window.removeEventListener('message', receive);
+      }, [interactive, onNavigate]);
       React.useEffect(() => {
         let alive = true;
         setName(doc?.name ?? '');
         setNotice(null);
         if (!doc || doc.status !== 'ok') return () => { alive = false; };
         setPreview({ state: 'loading', id: doc.id });
-        post('/preview', { id: doc.id }).then(value => {
+        post('/preview', { id: doc.id, interactive }).then(value => {
           if (alive) setPreview({ state: 'ready', ...value });
         }).catch(error => {
           if (alive) setPreview({ state: 'failed', id: doc.id, error: error.message });
         });
         return () => { alive = false; };
-      }, [doc?.id, doc?.mtime, doc?.status, iframeNonce]);
-      const openExternal = async () => {
+      }, [doc?.id, doc?.mtime, doc?.status, iframeNonce, interactive]);
+      const openExternal = async browser => {
         setOpening(true);
-        try { await post('/open', { id: doc.id }); }
-        catch (error) { setNotice(error.message); }
+        try {
+          const result = await post('/open', { id: doc.id, browser: browser === 'edge' ? 'edge' : 'default' });
+          setBrowserAddress(result.fileUrl || doc.absolutePath);
+          setNotice(t('ui.browserSent'));
+        }
+        catch (error) { setBrowserAddress(doc.absolutePath); setNotice(error.message); }
         finally { setOpening(false); }
       };
       if (!doc) return h('div', { className: 'dshl-reader-empty' }, t('reader.empty'));
@@ -800,6 +929,8 @@ window.__ModuleLoader__.load({
                 h('button', { type: 'submit', className: 'dshl-ghost', disabled: renaming || name === doc.name }, t('actions.rename'))),
               h('p', { className: 'dshl-root-path' }, t('reader.renameHint')))),
           h('div', { className: 'dshl-reader-actions' },
+            h('button', { type: 'button', className: 'dshl-ghost', 'aria-pressed': interactive,
+              onClick: () => { setExternalLink(null); setInteractive(!interactive); } }, t(interactive ? 'ui.static' : 'ui.interactive')),
             iconButton('star', doc.favorite ? t('actions.unfavorite') : t('actions.favorite'), () => onToggleFavorite(doc)),
             iconButton('tag', t('actions.tags'), onToggleTags),
             iconButton('refresh', t('actions.refresh'), onReload),
@@ -809,23 +940,28 @@ window.__ModuleLoader__.load({
             }))),
         tagsOpen ? h(TagEditor, { t, tags: doc.tags, onSave: tags => onSaveTags(doc, tags) }) : null,
         notice ? h('div', { className: 'dshl-reader-error-body', role: 'alert' }, notice) : null,
+        browserAddress ? h('input', { className: 'dshl-input', readOnly: true, value: browserAddress, 'aria-label': t('actions.copyPath'), onFocus: e => e.target.select() }) : null,
+        browserAddress && /^(?:[a-z]:[\\/]|\\\\)/i.test(doc.absolutePath) ?
+          h('button', { type: 'button', className: 'dshl-ghost', disabled: opening, onClick: () => openExternal('edge') }, t('ui.edge')) : null,
+        externalLink ? h('a', { href: externalLink, target: '_blank', rel: 'noopener noreferrer' }, t('ui.visit')) : null,
         fail ? h('div', { className: 'dshl-reader-error', role: 'alert' },
           h('div', null, fail), h('button', { className: 'dshl-ghost', onClick: onRetry }, t('actions.retry')),
           h('button', { className: 'dshl-ghost', onClick: openExternal }, t('actions.openExternal'))) :
-        ready ? h(React.Fragment, null,
+        ready && !!preview.interactive === interactive ? h(React.Fragment, null,
           preview.warnings.length ? h('details', { className: 'dshl-resource-warnings' },
             h('summary', null, t('reader.resourcesFailed', { n: preview.warnings.length })),
             preview.warnings.map((warning, i) => h('div', { key: i }, `${warning.path}: ${warning.message}`))) : null,
-          h('iframe', { key: `${doc.id}:${iframeNonce}`, ref: frameRef, className: 'dshl-frame dshl-memory-frame',
-            title: doc.title, srcDoc: preview.html, sandbox: 'allow-same-origin', referrerPolicy: 'no-referrer',
+          h('iframe', { key: `${doc.id}:${iframeNonce}:${interactive}`, ref: frameRef, className: 'dshl-frame dshl-memory-frame',
+            title: doc.title, srcDoc: preview.html, sandbox: interactive ? 'allow-scripts' : 'allow-same-origin', referrerPolicy: 'no-referrer',
             onLoad: () => {
+              if (interactive) return;
               const body = frameRef.current?.contentDocument;
               body?.addEventListener('click', event => {
                 const link = event.target.closest?.('a[data-library-link]');
                 if (!link) return;
                 event.preventDefault();
                 const target = link.getAttribute('data-library-path');
-                if (target) onNavigate(doc.rootId, target); else setNotice(t('reader.externalHint'));
+                follow(target, link.getAttribute('data-library-link'));
               });
             } })) : h('div', { className: 'dshl-reader-empty', role: 'status' }, t('reader.loading')));
     }
@@ -891,6 +1027,11 @@ window.__ModuleLoader__.load({
       const [focus, setFocus] = React.useState(true);
       const [rootsOpen, setRootsOpen] = React.useState(false);
       const [busy, setBusy] = React.useState(false);
+      const [navWidth, setNavWidth] = React.useState(() => {
+        try { const n = Number(localStorage.getItem('dsh-html-library:nav-width')); if (n >= 18 && n <= 65) return n; } catch {}
+        return 26;
+      });
+      React.useEffect(() => { try { localStorage.setItem('dsh-html-library:nav-width', String(navWidth)); } catch {} }, [navWidth]);
       const [iframeNonce, setIframeNonce] = React.useState(0);
       const [tagsOpen, setTagsOpen] = React.useState(false);
       const [presentation, setPresentation] = React.useState('rows');
@@ -1259,8 +1400,19 @@ window.__ModuleLoader__.load({
       } else {
         content = h(
           'div',
-          { className: 'dshl-main' },
-          h(NavColumn, { t, snapshot: snapshot.data, view, onSelect: selectView, selectedId, onOpen: openFocus }),
+          { className: 'dshl-main', style: { '--nav-width': navWidth + '%' } },
+          h(NavColumn, { t, snapshot: snapshot.data, view, onSelect: selectView, selectedId, onOpen: openFocus,
+            onEdit: async entry => {
+              const result = await post('/entries', entry);
+              if (entry.action === 'delete') {
+                const removed = doc => doc?.rootId === entry.rootId && (doc.relPath === result.relPath || doc.relPath.startsWith(result.relPath + '/'));
+                if (removed(selected)) { setSelectedId(null); setOpenedDoc(null); }
+                setList(previous => ({ ...previous, items: previous.items.filter(doc => !removed(doc)) }));
+                if (view.rootId === entry.rootId && (view.folder === result.relPath || view.folder?.startsWith(result.relPath + '/'))) setView({ mode: 'root', rootId: entry.rootId });
+              }
+              await loadSnapshot();
+            } }),
+          h(SplitHandle, { t, width: navWidth, onResize: setNavWidth }),
           h(
             'section',
             { className: 'dshl-mid' },
@@ -1282,7 +1434,7 @@ window.__ModuleLoader__.load({
           h(
             'section',
             { className: 'dshl-reader' },
-            h(Reader, {
+            h(Reader, { key: selected?.id,
               t,
               doc: selected,
               terms: list.terms,
@@ -1414,7 +1566,7 @@ window.__ModuleLoader__.load({
 .dshl-badge.is-failed{color:var(--dsw-alias-state-error-primary);border:1px solid var(--dsw-alias-state-error-primary)}
 .dshl-mark{padding:0 1px;border-radius:2px;background:var(--dsw-alias-state-warn-primary);color:var(--dsw-alias-label-primary-foreground,var(--dsw-alias-bg-base))}
 .dshl-reader{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-layer-1)}
-.dshl-reader-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;height:44px;padding:0 8px 0 14px;border-bottom:1px solid var(--dsw-alias-border-l1)}
+.dshl-reader-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;min-height:44px;max-height:50%;overflow:auto;flex-wrap:wrap;padding:5px 8px 5px 14px;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .dshl-reader-heading{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:0;line-height:18px}
 .dshl-reader-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .dshl-reader-path{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dshl-tertiary);font-size:11px;line-height:15px}
@@ -1496,6 +1648,17 @@ window.__ModuleLoader__.load({
 @media (max-width:1080px){.dshl-nav{flex-basis:190px}.dshl-mid{flex-basis:290px}}
 
 @media (max-width:760px){.dshl-mid{flex-basis:250px}}
+.dshl-main>.dshl-nav{flex:0 0 var(--nav-width);border-right:0}
+.dshl-split{flex:0 0 7px;cursor:col-resize;touch-action:none;user-select:none;border-inline:1px solid var(--dsw-alias-border-l1)}
+.dshl-split:hover,.dshl-split:focus-visible{background:var(--dsw-alias-brand-primary)}
+.dshl-tree-more{flex:none;border:0;background:transparent;cursor:pointer;padding:2px 6px}
+.dshl-entry-options,.dshl-entry-options form{display:flex;align-items:center;flex-wrap:wrap;gap:4px;overflow-wrap:anywhere}
+.dshl-entry-options{padding:6px;background:var(--dsw-alias-bg-layer-1)}
+.dshl-reader-actions{max-width:100%;flex-wrap:wrap}
+.dshl-reader-heading{min-width:min(180px,100%)}
+.dshl-reader-head .dshl-rename{flex-wrap:wrap}
+.dshl-reader-head .dshl-input{min-width:0;max-width:100%}
+
 `;
 
     // ---------------------------------------------------------------- 插件装配

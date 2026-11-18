@@ -246,17 +246,21 @@ test('browser open validates indexed files, and reports launcher failures', asyn
   const doc = (await library.listDocuments()).items[0];
   const opened = [];
   const route = (options = {}) => createRoutes(library, {
-    openExternal: async url => opened.push(url), ...options,
+    openExternal: async (url, browser) => opened.push({ url, browser }), ...options,
   }).find(entry => entry.path === `${ROUTE_PREFIX}/open`);
   const request = { method: 'POST', body: JSON.stringify({ id: doc.id }) };
-  assert.equal((await call(route(), request)).statusCode, 200);
-  assert.deepEqual(opened, [pathToFileURL(await fs.realpath(path.join(corpus, 'page.html'))).href]);
+  const url = pathToFileURL(await fs.realpath(path.join(corpus, 'page.html'))).href;
+  const result = await call(route(), request);
+  assert.equal(result.statusCode, 200);
+  assert.equal(jsonOf(result).value.fileUrl, url);
+  await call(route(), { method: 'POST', body: JSON.stringify({ id: doc.id, browser: 'edge' }) });
+  assert.deepEqual(opened, [{ url, browser: 'default' }, { url, browser: 'edge' }]);
   const failure = await call(route({ openExternal: async () => { throw new Error('launcher unavailable'); } }), request);
   assert.equal(failure.statusCode, 500);
   assert.match(jsonOf(failure).error.message, /launcher unavailable/);
   await fs.rm(path.join(corpus, 'page.html'));
   assert.equal((await call(route(), request)).statusCode, 404);
-  assert.equal(opened.length, 1);
+  assert.equal(opened.length, 2);
   assert.equal((await call(route(), { method: 'POST', body: JSON.stringify({ id: 'unknown', path: '/etc/passwd' }) })).statusCode, 404);
 });
 

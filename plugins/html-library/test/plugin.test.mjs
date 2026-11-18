@@ -58,7 +58,7 @@ test('apply() wires routes, scans fixtures and serves bytes through the real ent
   const { ctx, routes, effects } = createFakeContext();
   apply(ctx, { roots: [fixtures], watchIntervalMs: 60_000 });
 
-  assert.equal(routes.length, 13);
+  assert.equal(routes.length, 14);
   assert.ok(!routes.some((route) => route.path === '/api/dsh-html-library/site'));
   assert.ok(routes.some((route) => route.path === '/api/dsh-html-library/snapshot'));
 
