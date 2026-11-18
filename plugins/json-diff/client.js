@@ -47,8 +47,8 @@ window.__ModuleLoader__.load({
   factory(require) {
     const React = require('react');
     const h = React.createElement;
-    const zh = { title: '文件对比', left: '原文', right: '新版', pasteLeft: '粘贴原文', pasteRight: '粘贴新版', unit: ' 行', resize: '调整左右栏宽度', equal: '两份内容一致', add: '新增', remove: '删除', change: '修改', limit: '内容过长，请分段对比。', result: '逐行差异', only: '只看差异' };
-    const en = { title: 'File comparison', left: 'Original', right: 'Revised', pasteLeft: 'Paste original text', pasteRight: 'Paste revised text', unit: '', resize: 'Resize columns', equal: 'Both inputs match', add: 'Added', remove: 'Removed', change: 'Changed', limit: 'Input too large. Compare smaller sections.', result: 'Line differences', only: 'Changes only' };
+    const zh = { title: '文件对比', left: '原文', right: '新版', pasteLeft: '粘贴原文', pasteRight: '粘贴新版', unit: ' 行', resize: '调整左右栏宽度', equal: '两份内容一致', add: '新增', remove: '删除', change: '修改', limit: '内容过长，请分段对比。', result: '逐行差异', line: '第', blank: '空行' };
+    const en = { title: 'File comparison', left: 'Original', right: 'Revised', pasteLeft: 'Paste original text', pasteRight: 'Paste revised text', unit: '', resize: 'Resize columns', equal: 'Both inputs match', add: 'Added', remove: 'Removed', change: 'Changed', limit: 'Input too large. Compare smaller sections.', result: 'Line differences', line: 'Line ', blank: 'Blank line' };
     const Split = React.createContext(null);
     function Layout({ children }) {
       const [width, setWidth] = React.useState(50);
@@ -63,7 +63,7 @@ window.__ModuleLoader__.load({
         onPointerDown: e => { if (e.button === 0) e.currentTarget.setPointerCapture(e.pointerId); },
         onPointerMove: e => {
           if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-          const bounds = e.currentTarget.closest('.jd-inputs, table').getBoundingClientRect();
+          const bounds = e.currentTarget.closest('.jd-inputs').getBoundingClientRect();
           if (bounds.width) resize(100 * (e.clientX - bounds.left) / bounds.width);
         },
         onDoubleClick: () => setWidth(50),
@@ -89,10 +89,41 @@ window.__ModuleLoader__.load({
       return h(React.Fragment, null, chars.slice(0, start).join(''),
         h('mark', null, chars.slice(start, end).join('')), chars.slice(end).join(''));
     }
+    function Editor({ side, value, result, inputRef, update, t }) {
+      const mirror = React.useRef(null);
+      const sync = () => {
+        const input = inputRef.current;
+        mirror.current.style.width = input.clientWidth + 'px';
+        mirror.current.style.transform = 'translateY(' + -input.scrollTop + 'px)';
+      };
+      React.useLayoutEffect(() => {
+        sync();
+        const observer = new ResizeObserver(sync);
+        observer.observe(inputRef.current);
+        return () => observer.disconnect();
+      }, [value, result]);
+      const key = side ? 'r' : 'l';
+      return h('label', null, h('span', null, t(side ? 'right' : 'left')),
+        h('div', { className: 'jd-editor' },
+          h('div', { className: 'jd-mirror', ref: mirror, 'aria-hidden': true },
+            result && result.rows.map(row => {
+              const n = row[key];
+              if (n === null) return null;
+              const line = result.lines[side][n];
+              const peer = row.type === 'change' ? result.lines[1-side][side ? row.l : row.r] : undefined;
+              return h('div', { key:n, 'data-line':n, className:row.type === 'same' ? '' : side ? 'jd-plus' : 'jd-minus' },
+                line ? lineContent(line, peer) : '​');
+            })),
+          h('textarea', { ref:inputRef, value, spellCheck:false, onScroll:sync,
+            'aria-label':t(side ? 'right' : 'left'), placeholder:t(side ? 'pasteRight' : 'pasteLeft'),
+            onChange:e => update(e.target.value) })));
+    }
     function Panel({ t }) {
       const [inputs, setInputs] = React.useState(['', '']);
-      const [result, setResult] = React.useState(null);
-      const [only, setOnly] = React.useState(false);
+      const [snapshot, setResult] = React.useState(null);
+      const result = snapshot?.inputs === inputs ? snapshot : null;
+      const left = React.useRef(null);
+      const right = React.useRef(null);
       const [error, setError] = React.useState('');
       React.useEffect(() => {
         setError('');
@@ -103,7 +134,7 @@ window.__ModuleLoader__.load({
         const timer = setTimeout(() => {
           try {
             const lines = inputs.map(textLines);
-            setResult({ lines, rows: compareRows(...lines) });
+            setResult({ inputs, lines, rows: compareRows(...lines) });
           } catch (error) {
             if (!(error instanceof RangeError)) throw error;
             setResult(null);
@@ -114,28 +145,38 @@ window.__ModuleLoader__.load({
       }, [inputs, t]);
       const counts = { add: 0, remove: 0, change: 0 };
       if (result) for (const row of result.rows) if (row.type !== 'same') counts[row.type]++;
-      const changed = Object.values(counts).some(Boolean);
-      const rows = result && (only && changed ? result.rows.filter(row => row.type !== 'same') : result.rows);
-      return h(Layout, null,
-        h('style', null, styles),
-        h('header', null, h('h2', null, t('title'))),
-        h('div', { className: 'jd-workspace' },
-          h('div', { className: 'jd-inputs' }, inputs.map((value, side) =>
-            h('label', { key: side }, h('span', null, t(side ? 'right' : 'left')),
-              h('textarea', { value, spellCheck: false, placeholder: t(side ? 'pasteRight' : 'pasteLeft'), onChange: e => {
-                setInputs(inputs.map((old, i) => side === i ? e.target.value : old));
-              } }))), h(Divider, { label: t('resize') })),
-        result && h('div', { className: 'jd-actions' },
-          h('span', { role: 'status' }, result && (changed
-            ? Object.keys(counts).filter(k => counts[k]).map(k => t(k) + ' ' + counts[k] + t('unit')).join(' · ') : t('equal'))),
-          changed && h('label', null, h('input', { type: 'checkbox', checked: only, onChange: e => setOnly(e.target.checked) }), t('only'))),
-        error && h('div', { role: 'alert' }, error),
-        result && h('div', { className: 'jd-scroll', tabIndex: 0, role: 'region', 'aria-label': t('result') },
-          h('table', null, h('colgroup', null, h('col', { style: { width: 'var(--jd-left)' } }), h('col')), h('thead', null, h('tr', null, ['left','right'].map(k => h('th', { key: k }, t(k), k === 'left' && h(Divider, { label: t('resize') }))))),
-            h('tbody', null, rows.map(({ l, r, type }, i) => h('tr', { key: i },
-              [l,r].map((n, side) => h('td', { key: side, className: n === null || type === 'same' ? '' : side ? 'jd-plus' : 'jd-minus' },
-                n !== null && h('div', null, h('small', null, n + 1, type === 'same' ? ' ' : side ? ' +' : ' −'), h('code', null, lineContent(result.lines[side][n],
-                  type === 'change' ? result.lines[1 - side][side ? l : r] : undefined))))))))))));
+      const changes = result ? result.rows.filter(row => row.type !== 'same') : [];
+      function jump(row) {
+        for (const [ref, index] of [[left, row.l], [right, row.r]]) {
+          if (index === null) continue;
+          const input = ref.current;
+          const line = input.parentElement.querySelector('[data-line="' + index + '"]');
+          if (line) input.scrollTop = line.offsetTop - input.clientHeight / 3;
+        }
+      }
+      function snippet(row) {
+        const parts = [];
+        if (row.l !== null) parts.push(result.lines[0][row.l].slice(0, 100) || t('blank'));
+        if (row.r !== null) parts.push(result.lines[1][row.r].slice(0, 100) || t('blank'));
+        return parts.join(' → ');
+      }
+      return h(Layout, null, h('style', null, styles),
+        h('header', null, h('h2', null, t('title')),
+          h('div', { className:'jd-counts', role:'status' }, Object.keys(counts).filter(k => counts[k]).map(k =>
+            h('span', { key:k, className:'jd-count-'+k }, t(k)+' '+counts[k]+t('unit'))))),
+        h('div', { className:'jd-workspace' },
+          h('div', { className:'jd-inputs' }, inputs.map((value, side) =>
+            h(Editor, { key:side, side, value, result, t, inputRef:side ? right : left,
+              update:text => setInputs(inputs.map((v,i) => i === side ? text : v)) })),
+            h(Divider, { label:t('resize') })),
+          error && h('div', { role:'alert' }, error),
+          result && (changes.length ? h('section', { className:'jd-list', 'aria-label':t('result') },
+            h('h3', null, t('result')),
+            changes.map(row => h('button', { key:[row.l,row.r].join('/'), type:'button', onClick:() => jump(row) },
+              h('span', { className:'jd-count-'+row.type }, t(row.type)),
+              h('small', null, t('line') + ((row.r ?? row.l) + 1) + t('unit')),
+              h('span', { className:'jd-preview' }, snippet(row)))))
+            : h('div', { className:'jd-equal', role:'status' }, t('equal')))));
     }
     const styles = `
 .jd-panel {
@@ -149,32 +190,38 @@ window.__ModuleLoader__.load({
 .jd-workspace {flex:1;min-height:240px;display:flex;flex-direction:column;overflow:hidden;
   background:var(--jd-paper);border:1px solid var(--jd-line);border-radius:9px}
 .jd-inputs {position:relative;flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,var(--jd-left)) minmax(0,1fr)}
-.jd-workspace:has(.jd-scroll) .jd-inputs {flex:0 0 clamp(90px,25%,210px)}
+
 .jd-inputs label {min-width:0;min-height:0;display:flex;flex-direction:column}
-.jd-inputs label>span,.jd-scroll th {padding:7px 12px;background:var(--jd-bar);font-size:13px;font-weight:600}
+.jd-inputs label>span {padding:7px 12px;background:var(--jd-bar);font-size:13px;font-weight:600}
 .jd-inputs label:focus-within>span {color:var(--dsw-alias-brand-primary)}
-.jd-inputs textarea {box-sizing:border-box;flex:1;min-height:0;width:100%;border:0;border-radius:0;
-  padding:12px;resize:none;background:transparent;color:inherit;font:inherit;font-size:14px;line-height:1.65;tab-size:4}
+.jd-editor {position:relative;flex:1;min-height:0;overflow:hidden}
+.jd-editor textarea,.jd-mirror {box-sizing:border-box;margin:0;border:0;padding:12px;width:100%;
+  font:inherit;font-size:14px;line-height:1.65;letter-spacing:normal;tab-size:4;
+  white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;text-align:start}
+.jd-editor textarea {position:absolute;inset:0;height:100%;resize:none;background:transparent;color:inherit;border-radius:0}
+.jd-mirror {position:absolute;top:0;left:0;color:transparent;pointer-events:none;user-select:none}
+.jd-mirror mark {color:transparent;background:color-mix(in srgb,#c95157 29%,transparent)}
+.jd-plus mark {background:color-mix(in srgb,#43986c 32%,transparent)}
 .jd-inputs textarea:focus-visible {outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
 .jd-divider {position:absolute;inset-block:0;left:var(--jd-left);width:12px;transform:translateX(-50%);
   cursor:col-resize;touch-action:none;user-select:none;z-index:2}
 .jd-divider::after {content:'';position:absolute;inset:0 auto 0 50%;width:1px;background:var(--jd-line)}
 .jd-divider:hover::after,.jd-divider:focus-visible::after,.jd-divider:active::after {background:var(--dsw-alias-brand-primary);width:2px}
-.jd-actions,.jd-panel [role=alert] {padding:7px 12px;border-block:1px solid var(--jd-line);font-size:13px}
-.jd-actions {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.jd-actions label {display:flex;align-items:center;gap:5px}
-.jd-scroll {flex:1;min-height:0;overflow:auto}
-.jd-scroll table {width:100%;border-spacing:0;table-layout:fixed}
-.jd-scroll th {position:sticky;top:0;text-align:left}
-.jd-scroll th:first-child {z-index:1}
-.jd-scroll th .jd-divider {left:100%}
-.jd-scroll td {vertical-align:top;padding:0}
-.jd-scroll td+td {border-left:1px solid var(--jd-line)}
-.jd-scroll td div {display:flex;gap:8px;padding:3px 8px;font-size:14px;line-height:1.55}
-.jd-scroll small {flex:none;min-width:4ch;text-align:right;opacity:.65;font-variant-numeric:tabular-nums}
-.jd-scroll code {font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;tab-size:4}
-.jd-scroll mark {color:inherit;border-radius:2px;background:color-mix(in srgb,#c95157 28%,transparent)}
-.jd-plus mark {background:color-mix(in srgb,#43986c 32%,transparent)}
+.jd-panel header,.jd-counts {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.jd-panel header {justify-content:space-between}
+.jd-counts span,.jd-list button>span:first-child {padding:2px 8px;border-radius:5px;font-size:12px}
+.jd-count-change {background:color-mix(in srgb,#be8a30 18%,transparent)}
+.jd-count-add {background:color-mix(in srgb,#43986c 18%,transparent)}
+.jd-count-remove {background:color-mix(in srgb,#c95157 16%,transparent)}
+.jd-list,.jd-equal,.jd-panel [role=alert] {border-top:1px solid var(--jd-line)}
+.jd-list {max-height:32%;overflow:auto}
+.jd-list h3,.jd-equal,.jd-panel [role=alert] {margin:0;padding:7px 12px;font-size:13px}
+.jd-list h3 {background:var(--jd-bar)}
+.jd-list button {display:flex;width:100%;align-items:center;gap:10px;padding:6px 12px;color:inherit;
+  background:transparent;border:0;text-align:start;font:inherit;cursor:pointer}
+.jd-list button:hover,.jd-list button:focus-visible {background:var(--jd-bar)}
+.jd-list small {white-space:nowrap}
+.jd-preview {overflow:hidden;text-overflow:ellipsis;white-space:pre;font-size:13px}
 .jd-minus {background:color-mix(in srgb,#c95157 13%,transparent)}
 .jd-plus {background:color-mix(in srgb,#43986c 16%,transparent)}
 `;
