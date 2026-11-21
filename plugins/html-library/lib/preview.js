@@ -54,28 +54,41 @@ export async function buildPreview(library, id, limits = {}) {
       return buffer.subarray(0, bytesRead);
     } finally { await handle.close(); }
   };
-  const resource = async (reference, base, { asCss = false, stack = [], bundledScript = false } = {}) => {
+  const readSm2 = async () => {
+    const response = await fetch(SM2_SCRIPT_URL, {
+      redirect: 'error', credentials: 'omit', signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok || !response.body) {
+      await response.body?.cancel();
+      throw new Error(`SM2 脚本下载失败（HTTP ${response.status}）`);
+    }
+    let size = 0;
+    const chunks = [];
+    for await (const chunk of response.body) {
+      size += chunk.length;
+      if (total + size > maxTotal || size > maxAsset) throw new Error('资源超过预览大小上限');
+      chunks.push(chunk);
+    }
+    total += size;
+    return Buffer.concat(chunks, size);
+  };
+  const resource = async (reference, base, { asCss = false, stack = [], script = false } = {}) => {
     if (!reference || reference.startsWith('#') || /^data:/i.test(reference)) return reference;
     try {
-      let file, hash = '';
-      if (bundledScript && reference === SM2_SCRIPT_URL && limits.bundledSm2 !== false) {
-        file = { absolutePath: fileURLToPath(import.meta.resolve('sm-crypto/dist/sm2.js')), name: 'sm2.js' };
-      } else {
-        const { relative, url } = resolvePreviewReference(reference, base, root);
-        file = await locate(relative);
-        hash = url.hash;
-      }
-      const key = `${file.absolutePath}:${asCss}`;
+      const online = script && reference === SM2_SCRIPT_URL && limits.bundledSm2 !== false;
+      const location = online ? null : resolvePreviewReference(reference, base, root);
+      const file = online ? null : await locate(location.relative);
+      const key = online ? SM2_SCRIPT_URL : `${file.absolutePath}:${asCss}`;
       if (stack.includes(key)) throw new Error('循环引用的样式表');
       if (!cache.has(key)) {
         if (cache.size >= maxAssets) throw new Error('资源数量超过预览上限');
         cache.set(key, (async () => {
-          const bytes = await read(file);
+          const bytes = online ? await readSm2() : await read(file);
           const css = asCss ? await rewriteCss(decodeBuffer(bytes).text, new URL(reference, base), [...stack, key]) : null;
-          return `data:${asCss ? 'text/css;charset=utf-8' : mimeFor(file.name)};base64,${(css === null ? bytes : Buffer.from(css)).toString('base64')}`;
+          return `data:${asCss ? 'text/css;charset=utf-8' : mimeFor(online ? 'sm2.js' : file.name)};base64,${(css === null ? bytes : Buffer.from(css)).toString('base64')}`;
         })());
       }
-      return `${await cache.get(key)}${hash}`;
+      return `${await cache.get(key)}${location?.url.hash ?? ''}`;
     } catch (error) { addWarning(reference, error); return 'data:,'; }
   };
   const rewriteValue = async (value, base, stack) => {
@@ -119,7 +132,7 @@ export async function buildPreview(library, id, limits = {}) {
   for (const node of nodes) {
     if (!node.tagName) continue;
     if (node.tagName === 'script' && interactive && attr(node, 'src')) {
-      set(node, 'src', await resource(attr(node, 'src').value, base, { bundledScript: true }));
+      set(node, 'src', await resource(attr(node, 'src').value, base, { script: true }));
     }
     if ((node.tagName === 'script' && !interactive) || ['base', 'iframe', 'object', 'embed'].includes(node.tagName) || (node.tagName === 'meta' && /^(refresh|content-security-policy)$/i.test(attr(node, 'http-equiv')?.value ?? ''))) {
       tree.detachNode(node); continue;
