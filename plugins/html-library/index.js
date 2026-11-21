@@ -31,7 +31,7 @@ export function apply(ctx, config) {
   const library = createLibrary({ dir: resolveDataDir(), config: resolved, log });
 
   ctx.inject(['connection'], (sub) => {
-    for (const route of createRoutes(library, { log })) {
+    for (const route of createRoutes(library, { log, bundledSm2: resolved.bundledSm2 })) {
       // The registry authenticates the owner and binds the route to this context's lifetime.
       sub.connection.fetch.register(route);
     }

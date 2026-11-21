@@ -135,3 +135,19 @@ test('interactive preview includes local JavaScript only when requested', async 
   assert.match(preview.html, /connect-src 'none'/);
   assert.deepEqual(preview.warnings, []);
 });
+
+test('interactive preview resolves the pinned SM2 script offline only for its exact URL', async t => {
+  const { root, lib } = await setup(t);
+  const url = 'https://cdn.jsdelivr.net/npm/sm-crypto@0.3.13/dist/sm2.min.js';
+  await fs.writeFile(path.join(root, 'sm2.html'), `<script src="${url}"></script><script src="${url}?v=2"></script><img src="${url}">`);
+  await lib.scan();
+  const { id } = (await lib.listDocuments()).items[0];
+  const preview = await buildPreview(lib, id, { interactive: true });
+  const bytes = await fs.readFile(new URL(import.meta.resolve('sm-crypto/dist/sm2.js')));
+  assert.ok(preview.html.includes(bytes.toString('base64')));
+  assert.deepEqual(preview.warnings.map(w => w.path), [url + '?v=2', url]);
+  assert.equal(preview.assets, 1);
+  const disabled = await buildPreview(lib, id, { interactive: true, bundledSm2: false });
+  assert.equal(disabled.warnings.length, 3);
+  assert.equal((await buildPreview(lib, id)).assets, 0);
+});

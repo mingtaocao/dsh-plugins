@@ -8,6 +8,7 @@ import valueParser from 'postcss-value-parser';
 import { decodeBuffer, mimeFor } from './mime.js';
 import { LibraryError } from './library.js';
 
+const SM2_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/sm-crypto@0.3.13/dist/sm2.min.js';
 const CSP = "default-src 'none'; script-src 'none'; style-src 'unsafe-inline' data:; img-src data: blob:; font-src data:; media-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'";
 const HTML_NS = 'http://www.w3.org/1999/xhtml';
 const attr = (node, name) => node.attrs?.find(entry => entry.name === name);
@@ -53,23 +54,28 @@ export async function buildPreview(library, id, limits = {}) {
       return buffer.subarray(0, bytesRead);
     } finally { await handle.close(); }
   };
-  const resource = async (reference, base, asCss = false, stack = []) => {
+  const resource = async (reference, base, { asCss = false, stack = [], bundledScript = false } = {}) => {
     if (!reference || reference.startsWith('#') || /^data:/i.test(reference)) return reference;
     try {
-      const { relative, url } = resolvePreviewReference(reference, base, root);
-      // Resolve against the configured root and check the real file before reading it.
-      const file = await locate(relative);
+      let file, hash = '';
+      if (bundledScript && reference === SM2_SCRIPT_URL && limits.bundledSm2 !== false) {
+        file = { absolutePath: fileURLToPath(import.meta.resolve('sm-crypto/dist/sm2.js')), name: 'sm2.js' };
+      } else {
+        const { relative, url } = resolvePreviewReference(reference, base, root);
+        file = await locate(relative);
+        hash = url.hash;
+      }
       const key = `${file.absolutePath}:${asCss}`;
       if (stack.includes(key)) throw new Error('循环引用的样式表');
       if (!cache.has(key)) {
         if (cache.size >= maxAssets) throw new Error('资源数量超过预览上限');
         cache.set(key, (async () => {
           const bytes = await read(file);
-          const css = asCss ? await rewriteCss(decodeBuffer(bytes).text, url, [...stack, key]) : null;
+          const css = asCss ? await rewriteCss(decodeBuffer(bytes).text, new URL(reference, base), [...stack, key]) : null;
           return `data:${asCss ? 'text/css;charset=utf-8' : mimeFor(file.name)};base64,${(css === null ? bytes : Buffer.from(css)).toString('base64')}`;
         })());
       }
-      return `${await cache.get(key)}${url.hash}`;
+      return `${await cache.get(key)}${hash}`;
     } catch (error) { addWarning(reference, error); return 'data:,'; }
   };
   const rewriteValue = async (value, base, stack) => {
@@ -78,7 +84,7 @@ export async function buildPreview(library, id, limits = {}) {
     parsed.walk(node => { if (node.type === 'function' && node.value.toLowerCase() === 'url') { urls.push(node); return false; } });
     for (const node of urls) {
       const reference = node.nodes.length === 1 && node.nodes[0].type === 'string' ? node.nodes[0].value : valueParser.stringify(node.nodes).trim();
-      const replaced = await resource(reference, base, false, stack);
+      const replaced = await resource(reference, base, { stack });
       node.nodes = [{ type: 'string', quote: '"', value: replaced }];
     }
     return parsed.toString();
@@ -93,7 +99,7 @@ export async function buildPreview(library, id, limits = {}) {
       if (!first) continue;
       const reference = first.type === 'string' ? first.value : first.type === 'function' && first.value.toLowerCase() === 'url' ? valueParser.stringify(first.nodes).replace(/^["']|["']$/g, '') : null;
       if (reference !== null) {
-        const url = await resource(reference, base, true, stack);
+        const url = await resource(reference, base, { asCss: true, stack });
         Object.assign(first, { type: 'string', quote: '"', value: url });
         delete first.nodes;
         node.params = parsed.toString();
@@ -113,7 +119,7 @@ export async function buildPreview(library, id, limits = {}) {
   for (const node of nodes) {
     if (!node.tagName) continue;
     if (node.tagName === 'script' && interactive && attr(node, 'src')) {
-      set(node, 'src', await resource(attr(node, 'src').value, base));
+      set(node, 'src', await resource(attr(node, 'src').value, base, { bundledScript: true }));
     }
     if ((node.tagName === 'script' && !interactive) || ['base', 'iframe', 'object', 'embed'].includes(node.tagName) || (node.tagName === 'meta' && /^(refresh|content-security-policy)$/i.test(attr(node, 'http-equiv')?.value ?? ''))) {
       tree.detachNode(node); continue;
@@ -127,7 +133,7 @@ export async function buildPreview(library, id, limits = {}) {
     const style = attr(node, 'style');
     if (style) style.value = await rewriteValue(style.value, base, []);
     if (node.tagName === 'link') {
-      if (/\bstylesheet\b/i.test(attr(node, 'rel')?.value ?? '')) set(node, 'href', await resource(attr(node, 'href')?.value, base, true));
+      if (/\bstylesheet\b/i.test(attr(node, 'rel')?.value ?? '')) set(node, 'href', await resource(attr(node, 'href')?.value, base, { asCss: true }));
       else tree.detachNode(node);
     }
     if (['img', 'source', 'video', 'audio', 'input', 'track', 'image', 'use'].includes(node.tagName)) {
