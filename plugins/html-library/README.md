@@ -12,7 +12,7 @@ DSH 全局知识库插件。默认左侧目录树、右侧原生 HTML 阅读器�
 - 原始 HTML/CSS 不写回、不转换为 Markdown。预览副本会解析并序列化 HTML，替换资源引用；这不是磁盘文件的逐字节副本。
 - 本地 CSS `@import`、`url()`、图片 `src/srcset` 和字体会受根目录边界检查后打包；加载失败时显示资源错误详情。
 - 打开文档即可在独立沙箱内运行内联脚本和知识目录里的 JavaScript，使用按钮、页签等控件。
-- 交互预览时，宿主会在线下载固定脚本 `https://cdn.jsdelivr.net/npm/sm-crypto@0.3.13/dist/sm2.min.js`。jsDelivr 超时或下载失败时，宿主会尝试从 unpkg.com 获取同版本脚本并校验 SHA-256；两个来源都失败时，阅读器会显示各自的原因。设置 `bundledSm2: false` 可关闭此功能。
+- 交互预览时，宿主会在线下载固定脚本 `https://cdn.jsdelivr.net/npm/sm-crypto@0.3.13/dist/sm2.min.js`。Windows 下通过 Windows PowerShell 使用运行 DSH 的用户的系统代理设置（含 PAC 和绕过规则）。jsDelivr 超时或下载失败时，宿主会尝试从 unpkg.com 获取同版本脚本并校验 SHA-256；两个来源都失败时，阅读器会显示各自的原因。设置 `bundledSm2: false` 可关闭此功能。
 - 需要联网或完整浏览器环境时，点「在 Chrome 中打开」。插件会在运行 DSH 的电脑上启动已安装的 Google Chrome，并显示可复制的原文件地址。
 
 预览限制：单文件 8 MiB、资源总计 32 MiB、128 个不同资源。大文档或复杂动态页面请用系统浏览器。
