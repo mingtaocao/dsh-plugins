@@ -269,8 +269,8 @@ window.__ModuleLoader__.load({
       .mtt-card:hover{border-color:color-mix(in srgb,var(--mt-muted) 30%,var(--mt-line))}
       .mtt-card-top{display:flex;align-items:flex-start;gap:8px;min-height:20px}
       .mtt-card input[type=checkbox]{appearance:none;flex-shrink:0;width:14px;height:14px;min-width:14px;padding:0;margin:3px 0 0;border:1.4px solid color-mix(in srgb,var(--mt-muted) 55%,transparent);border-radius:4px;background:transparent;cursor:pointer;display:grid;place-content:center}
-      .mtt-card input[type=checkbox]:checked{background:var(--mt-accent);border-color:var(--mt-accent)}
-      .mtt-card input[type=checkbox]:checked::after{content:'';width:6px;height:3px;border-left:1.4px solid white;border-bottom:1.4px solid white;transform:translateY(-1px) rotate(-45deg)}
+      .mtt-card input[type=checkbox]:checked{background:var(--mt-surface);border-color:var(--mt-completed-mark)}
+      .mtt-card input[type=checkbox]:checked::after{content:'';width:8px;height:4px;border-left:1.25px solid var(--mt-completed-mark);border-bottom:1.25px solid var(--mt-completed-mark);transform:translateY(-1px) rotate(-45deg)}
       .mtt-card .mtt-task-title{font-weight:400;line-height:20px;font-size:14px;overflow-wrap:anywhere}
       .mtt-card-top>.mtt-task-title{padding-right:20px!important}
       .mtt-card .mtt-task-title:hover{color:var(--mt-accent)}
@@ -461,14 +461,17 @@ window.__ModuleLoader__.load({
         .mtt-child>.mtt-child-more{position:absolute;right:4px;top:5px}
         .mtt-card .mtt-child>.mtt-task-title{padding-right:18px!important}
       }
-    .mtt{--mt-accent:light-dark(#486077,#aac1d2);--mt-canvas:light-dark(#fafbfc,#191c20);--mt-sidebar:light-dark(#f4f6f7,#1e2328);--mt-surface:light-dark(#fff,#22272d);--mt-line:light-dark(#e2e5e8,#3b444d);--mt-muted:light-dark(#626b74,#b0bac2)}
-    .mtt .mtt-views button[aria-pressed=true]{background:light-dark(#e1e8ed,#303e49);color:light-dark(#304b62,#ccdeea)}
+    .mtt{--mt-accent:light-dark(#486077,#aac1d2);--mt-board-accent:light-dark(#2558d8,#93b6ff);--mt-completed-mark:#43e97b;--mt-canvas:light-dark(#fafbfc,#191c20);--mt-sidebar:light-dark(#f4f6f7,#1e2328);--mt-surface:light-dark(#fff,#22272d);--mt-line:light-dark(#e2e5e8,#3b444d);--mt-muted:light-dark(#626b74,#b0bac2)}
+    .mtt .mtt-views button[aria-pressed=true]{background:light-dark(#e1e8ed,#303e49);color:light-dark(#304b62,#ccdeea);box-shadow:inset 3px 0 var(--mt-board-accent)}
     .mtt .mtt-group{background:light-dark(#f1f3f5,#262c32);border-radius:9px}
     .mtt .mtt-group h2{color:light-dark(#505d68,#c4cdd4);font-weight:600}
+    .mtt-view-board .mtt-head>.mtt-icon,.mtt-view-board .mtt-add-task{color:var(--mt-board-accent)!important}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group{background:var(--mt-surface);border:1px solid var(--mt-line);padding:10px}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group>h2{color:light-dark(#283443,#d3dce6);font-weight:650;margin-bottom:10px;padding:3px 4px 9px;border-bottom:1px solid var(--mt-line)}
     .mtt .mtt-group h2 .mtt-count{background:none;color:light-dark(#69747c,#aeb8c0);font-weight:400;padding:0 2px;font-variant-numeric:tabular-nums}
-    .mtt .mtt-columns:not(.mtt-matrix) h2:before{content:'';box-sizing:border-box;width:9px;height:9px;border:1.5px solid light-dark(#89939b,#aab4bc);border-radius:50%}
-    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(2) h2:before{border-color:light-dark(#526d82,#aac2d5);background:linear-gradient(to right,light-dark(#526d82,#aac2d5) 50%,transparent 50%)}
-    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(3) h2:before{border-color:light-dark(#73818a,#a7b4be);background:light-dark(#73818a,#a7b4be)}
+    .mtt .mtt-columns:not(.mtt-matrix) h2:before{content:'';box-sizing:border-box;width:9px;height:9px;border:1.5px solid light-dark(#7a8493,#aab4bc);border-radius:50%}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(2) h2:before{border-color:var(--mt-board-accent);background:linear-gradient(to right,var(--mt-board-accent) 50%,transparent 50%)}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(3) h2:before{border-color:light-dark(#788493,#a7b4be)}
     .mtt .mtt-matrix>.mtt-group:first-child{background:light-dark(#e8eef2,#2c3943)}
     .mtt .mtt-matrix>.mtt-group:first-child h2{color:light-dark(#354f63,#d3e1ec)}
     .mtt .mtt-matrix>.mtt-group:first-child h2:before{content:'';height:12px;width:3px;background:light-dark(#506e83,#a6c1d5);border-radius:2px}
