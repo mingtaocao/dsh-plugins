@@ -7,6 +7,7 @@ import { parse, serialize, defaultTreeAdapter as tree } from 'parse5';
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
 import { decodeBuffer, mimeFor } from './mime.js';
+import { fetchScript } from './script-download.js';
 import { LibraryError } from './library.js';
 
 const SM2_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/sm-crypto@0.3.13/dist/sm2.min.js';
@@ -28,7 +29,7 @@ export function resolvePreviewReference(reference, base, root, windows = process
   return { url, relative: relative.split(paths.sep).join('/') };
 }
 
-export async function buildPreview(library, id, limits = {}) {
+export async function buildPreview(library, id, limits = {}, download = fetchScript) {
   const interactive = limits.interactive === true;
   const doc = await library.getDocument(id);
   if (doc.status !== 'ok') throw new LibraryError('not-found', doc.error || '源文件不可用');
@@ -58,9 +59,7 @@ export async function buildPreview(library, id, limits = {}) {
     } finally { await handle.close(); }
   };
   const downloadSm2 = async (url) => {
-    const response = await fetch(url, {
-      redirect: 'error', credentials: 'omit', signal: AbortSignal.timeout(6_000),
-    });
+    const response = await download(url, Math.min(maxAsset, maxTotal - total));
     if (!response.ok || !response.body) {
       await response.body?.cancel();
       throw new Error(`SM2 脚本下载失败（HTTP ${response.status}）`);
