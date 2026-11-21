@@ -3,6 +3,11 @@
 async page => {
   const panel = page.locator('[data-task-manager]');
   const nav = panel.getByRole('navigation');
+  const views = nav.locator('.mtt-views > button');
+  const names = await views.evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label')));
+  if (!['全部任务|看板|四象限', 'All tasks|Board|Matrix'].includes(names.join('|'))) {
+    throw new Error('Expected three peer view buttons, got ' + names.join('|'));
+  }
   const task = name => panel.locator('.mtt-content').getByRole('button', { name, exact: true });
   for (const view of [/^(Board|看板)$/, /^(Matrix|四象限)$/]) {
     await nav.getByRole('button', { name: 'Alpha', exact: true }).click();
