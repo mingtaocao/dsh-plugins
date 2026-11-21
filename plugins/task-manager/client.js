@@ -9,7 +9,7 @@ window.__ModuleLoader__.load({
       unsupported: "未导入的字段或模块",
       more: "显示更多",
       title: "任务管理",
-      list: "全部任务",
+      list: "列表",
       search: "搜索任务",
       filter: "筛选任务",
       clearFilters: "清除筛选",
@@ -31,7 +31,6 @@ window.__ModuleLoader__.load({
       matrix: "四象限",
       views: "视图",
       navigation: "任务导航",
-      boardDirectory: "看板目录",
       projectDirectory: "项目目录",
       all: "所有项目",
       projects: "项目",
@@ -95,7 +94,6 @@ window.__ModuleLoader__.load({
       complete: "标记完成",
       reopen: "恢复待办",
       completedOn: "完成于",
-      completedEstimated: "完成于（估算）",
       countsDetail: "主任务 / 子任务",
       move: "移动象限",
       inherited: "象限与项目跟随父任务",
@@ -119,7 +117,7 @@ window.__ModuleLoader__.load({
       unsupported: "Unsupported fields or sections",
       more: "Show more",
       title: "Task manager",
-      list: "All tasks",
+      list: "List",
       search: "Search tasks",
       filter: "Filter tasks",
       clearFilters: "Clear filters",
@@ -141,7 +139,6 @@ window.__ModuleLoader__.load({
       matrix: "Matrix",
       views: "Views",
       navigation: "Task navigation",
-      boardDirectory: "Board directory",
       projectDirectory: "Project directory",
       all: "All projects",
       projects: "Projects",
@@ -206,7 +203,6 @@ window.__ModuleLoader__.load({
       complete: "Mark done",
       reopen: "Reopen",
       completedOn: "Completed",
-      completedEstimated: "Completed (estimated)",
       countsDetail: "Tasks / subtasks",
       move: "Move quadrant",
       inherited: "Project and quadrant follow the parent task",
@@ -257,10 +253,8 @@ window.__ModuleLoader__.load({
       .mtt-section-toggle>.mtt-icon{width:11px;height:11px;transition:transform .15s}
       .mtt-section-toggle[aria-expanded=true]>.mtt-icon{transform:rotate(90deg)}
       .mtt-project-list-heading>h2{flex:1;min-width:0}
-      .mtt-boards-heading{padding:6px 2px 4px 10px}
-      .mtt-board-links>button{display:flex;align-items:center;gap:8px;padding-left:18px}
       .mtt-project-items>button{display:flex;align-items:center;gap:8px}
-      .mtt-board-links[hidden],.mtt-project-items[hidden]{display:none}
+      .mtt-project-items[hidden]{display:none}
       .mtt-child-create{grid-column:1 / -1;display:flex;align-items:center;gap:6px;margin:7px 0 0 22px}
       .mtt-child-create input{flex:1;min-width:0;padding:5px 7px;font-size:12px}
       .mtt-child-create button{font-size:11px;padding:4px 7px}
@@ -354,14 +348,13 @@ window.__ModuleLoader__.load({
       .mtt-project-list-heading{gap:0;padding-left:8px}
       .mtt-projects button.mtt-section-toggle{font-size:12px;gap:8px}
       .mtt-projects .mtt-project-add{width:24px;min-width:24px;height:28px;min-height:28px}
-      .mtt-boards-heading{padding-left:8px}
       .mtt-projects button.mtt-nav-search{display:flex;align-items:center;gap:10px;margin-top:auto;border-top:1px solid var(--mt-line);border-radius:0;padding-top:14px;min-height:46px}
       .mtt-nav-compact .mtt-projects{width:58px;padding:12px 6px}
       .mtt-nav-compact .mtt-nav-top{padding:0 0 12px;justify-content:center}
       .mtt-nav-compact .mtt-nav-top>span,.mtt-nav-compact .mtt-project-label,.mtt-nav-compact .mtt-nav-count{display:none}
       .mtt-nav-compact .mtt-nav-top>.mtt-icon-button>.mtt-icon{transform:none}
-      .mtt-nav-compact .mtt-views>button,.mtt-nav-compact .mtt-board-links>button,.mtt-nav-compact .mtt-project-items>button,.mtt-nav-compact button.mtt-nav-search{justify-content:center;padding-left:0;padding-right:0}
-      .mtt-nav-compact .mtt-boards-heading,.mtt-nav-compact .mtt-project-list-heading{padding:0;justify-content:center}
+      .mtt-nav-compact .mtt-views>button,.mtt-nav-compact .mtt-project-items>button,.mtt-nav-compact button.mtt-nav-search{justify-content:center;padding-left:0;padding-right:0}
+      .mtt-nav-compact .mtt-project-list-heading{padding:0;justify-content:center}
       .mtt-nav-compact .mtt-section-toggle{font-size:0!important;gap:0!important;justify-content:center;min-width:40px}
       .mtt-nav-compact .mtt-project-add,.mtt-nav-compact .mtt-project-menu{display:none!important}
       .mtt-head{padding:12px 20px;min-height:60px;flex-wrap:nowrap;border-bottom:0;gap:8px;background:transparent}
@@ -370,7 +363,6 @@ window.__ModuleLoader__.load({
       .mtt-project-heading{display:contents}
       .mtt-project-heading>h2{display:none}
       .mtt-head-spacer{flex:1}
-      .mtt-scope-name{font-size:11px;color:var(--mt-muted);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
       .mtt-add-task{color:var(--mt-accent)!important}
       .mtt-tools{margin:0 20px 12px;padding:8px 10px;flex-wrap:nowrap;gap:6px;background:var(--mt-surface);border:1px solid color-mix(in srgb,var(--mt-accent) 45%,var(--mt-line));border-radius:10px}
       .mtt-tools>input{border:0!important;padding:5px 2px!important;min-width:50px}
@@ -457,7 +449,7 @@ window.__ModuleLoader__.load({
       .mtt-inherited{font-size:11px;color:var(--mt-muted)}
       .mtt-message:not(.mtt-error){position:absolute;right:16px;bottom:12px;z-index:4;pointer-events:none;font-size:11px;background:var(--mt-surface);border-radius:6px;box-shadow:0 2px 12px #0000000a}
       .mtt-message:empty{padding:0;background:none;box-shadow:none}
-      @container task-main (max-width:560px){.mtt-head{padding:10px 14px;gap:6px}.mtt-head h1{font-size:16px}.mtt-tools,.mtt-filter-panel{margin-left:14px;margin-right:14px}.mtt-tools{flex-wrap:wrap}.mtt-tools>input{flex-basis:calc(100% - 32px)}.mtt-tools>select{max-width:100%;flex:1}.mtt-scope-name{display:none}.mtt-view-list .mtt-card-secondary{margin-left:26px}.mtt-card .mtt-child .mtt-parent-ref{margin-left:26px}.mtt-child>.mtt-child-more{position:absolute;right:8px;top:10px}.mtt-child>.mtt-task-title{padding-right:22px!important}.mtt-child>.mtt-completed-at{margin-left:26px}}
+      @container task-main (max-width:560px){.mtt-head{padding:10px 14px;gap:6px}.mtt-head h1{font-size:16px}.mtt-tools,.mtt-filter-panel{margin-left:14px;margin-right:14px}.mtt-tools{flex-wrap:wrap}.mtt-tools>input{flex-basis:calc(100% - 32px)}.mtt-tools>select{max-width:100%;flex:1}.mtt-view-list .mtt-card-secondary{margin-left:26px}.mtt-card .mtt-child .mtt-parent-ref{margin-left:26px}.mtt-child>.mtt-child-more{position:absolute;right:8px;top:10px}.mtt-child>.mtt-task-title{padding-right:22px!important}.mtt-child>.mtt-completed-at{margin-left:26px}}
       @container task-card (max-width:240px){
         .mtt-card-top>.mtt-note-trigger{display:none}
         .mtt-card-top>.mtt-task-title,.mtt-card-top>.mtt-task-title:has(+.mtt-note-trigger){padding-right:20px!important}
@@ -469,6 +461,20 @@ window.__ModuleLoader__.load({
         .mtt-child>.mtt-child-more{position:absolute;right:4px;top:5px}
         .mtt-card .mtt-child>.mtt-task-title{padding-right:18px!important}
       }
+    .mtt{--mt-accent:light-dark(#486077,#aac1d2);--mt-canvas:light-dark(#fafbfc,#191c20);--mt-sidebar:light-dark(#f4f6f7,#1e2328);--mt-surface:light-dark(#fff,#22272d);--mt-line:light-dark(#e2e5e8,#3b444d);--mt-muted:light-dark(#626b74,#b0bac2)}
+    .mtt .mtt-views button[aria-pressed=true]{background:light-dark(#e1e8ed,#303e49);color:light-dark(#304b62,#ccdeea)}
+    .mtt .mtt-group{background:light-dark(#f1f3f5,#262c32);border-radius:9px}
+    .mtt .mtt-group h2{color:light-dark(#505d68,#c4cdd4);font-weight:600}
+    .mtt .mtt-group h2 .mtt-count{background:none;color:light-dark(#69747c,#aeb8c0);font-weight:400;padding:0 2px;font-variant-numeric:tabular-nums}
+    .mtt .mtt-columns:not(.mtt-matrix) h2:before{content:'';box-sizing:border-box;width:9px;height:9px;border:1.5px solid light-dark(#89939b,#aab4bc);border-radius:50%}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(2) h2:before{border-color:light-dark(#526d82,#aac2d5);background:linear-gradient(to right,light-dark(#526d82,#aac2d5) 50%,transparent 50%)}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(3) h2:before{border-color:light-dark(#73818a,#a7b4be);background:light-dark(#73818a,#a7b4be)}
+    .mtt .mtt-matrix>.mtt-group:first-child{background:light-dark(#e8eef2,#2c3943)}
+    .mtt .mtt-matrix>.mtt-group:first-child h2{color:light-dark(#354f63,#d3e1ec)}
+    .mtt .mtt-matrix>.mtt-group:first-child h2:before{content:'';height:12px;width:3px;background:light-dark(#506e83,#a6c1d5);border-radius:2px}
+    .mtt .mtt-chip[data-quadrant],.mtt .mtt-chip[data-status],.mtt .mtt-priority{color:light-dark(#626b74,#b0bac2)}
+    .mtt .mtt-chip[data-status=doing]{color:light-dark(#48647a,#b5cddf)}
+    .mtt .mtt-due[data-overdue=true]{color:light-dark(#92595b,#e4a3a5)!important}
       @media(max-width:780px){.mtt-projects{width:162px}.mtt-detail{width:300px}.mtt-nav-top{padding-left:5px}}
       @media(hover:none){.mtt-card button.mtt-child-more{opacity:1}}
       @media(prefers-reduced-motion:reduce){.mtt-projects{transition:none}}
@@ -609,9 +615,9 @@ window.__ModuleLoader__.load({
         };
       }, [dateLocale]);
       function completionTime(item, full = false) {
-        if (item.status !== "done" || !item.completedAt) return null;
+        if (item.status !== "done" || !item.completedAt || item.completionTimeEstimated) return null;
         const date = new Date(item.completedAt);
-        const label = t(item.completionTimeEstimated ? "completedEstimated" : "completedOn");
+        const label = t("completedOn");
         return h("time", {
           className: "mtt-completed-at" + (full ? " mtt-completed-full" : ""),
           dateTime: item.completedAt,
@@ -633,8 +639,8 @@ window.__ModuleLoader__.load({
       const [navSections, setNavSections] = React.useState(() => {
         try {
           const saved = JSON.parse(localStorage.getItem("dsh-task-manager.nav-sections"));
-          return { boards: saved?.boards !== false, projects: saved?.projects !== false, compact: saved?.compact === true };
-        } catch { return { boards: true, projects: true, compact: false }; }
+          return { projects: saved?.projects !== false, compact: saved?.compact === true };
+        } catch { return { projects: true, compact: false }; }
       });
       React.useEffect(() => {
         try { localStorage.setItem("dsh-task-manager.nav-sections", JSON.stringify(navSections)); } catch { /* Browser preferences are optional. */ }
@@ -823,8 +829,17 @@ window.__ModuleLoader__.load({
         setAddingChild(null);
         return true;
       }
+      async function openGlobalView(nextView) {
+        if (!(await open(null))) return;
+        setScope("all");
+        setArchived(false);
+        setStatus("all");
+        setQuery("");
+        setView(nextView);
+      }
       async function toggleArchived() {
         if (!(await open(null))) return;
+        setView("list");
         setArchived((value) => !value);
         setScope("all");
         setNavSections((values) => ({ ...values, projects: true }));
@@ -1312,23 +1327,11 @@ window.__ModuleLoader__.load({
               { className: "mtt-views", role: "group", "aria-label": t("views") },
               h(Button, {
                 "aria-label": t("list"), title: t("list"), "aria-pressed": view === "list" && scope === "all" && !archived,
-                onClick: async () => {
-                  if (!(await open(null))) return;
-                  setScope("all"); setArchived(false); setStatus("all"); setQuery(""); setView("list");
-                },
+                onClick: () => openGlobalView("list"),
               }, h(Icon, { name: "list" }), h("span", { className: "mtt-project-label" }, t("list")), h("span", { className: "mtt-nav-count" }, (state?.tasks ?? []).filter((x) => x.parentId === null && x.status !== "done" && state.projects.some((p) => p.id === x.projectId && !p.archivedAt)).length)),
-              h("h2", { className: "mtt-boards-heading" },
-                h(Button, {
-                  className: "mtt-section-toggle", "aria-label": t("boardDirectory"),
-                  "aria-expanded": navSections.boards, "aria-controls": navId + "-boards",
-                  onClick: () => setNavSections((values) => ({ ...values, boards: !values.boards })),
-                }, h(Icon, { name: "chevron" }), t("board")),
-              ),
-              h("div", { id: navId + "-boards", className: "mtt-board-links", hidden: !navSections.boards },
-                ["board", "matrix"].map((v) => h(Button, {
-                  key: v, "aria-label": t(v), title: t(v), "aria-pressed": view === v, onClick: () => setView(v),
-                }, h(Icon, { name: v }), h("span", { className: "mtt-project-label" }, t(v)))),
-              ),
+              ["board", "matrix"].map((v) => h(Button, {
+                key: v, "aria-label": t(v), title: t(v), "aria-pressed": view === v, onClick: () => openGlobalView(v),
+              }, h(Icon, { name: v }), h("span", { className: "mtt-project-label" }, t(v)))),
             ),
             h(
               "div",
@@ -1443,7 +1446,6 @@ window.__ModuleLoader__.load({
                   ),
                 )
               : null,
-              view !== "list" && current ? h("span", { className: "mtt-scope-name" }, current.name) : null,
               h("span", { className: "mtt-head-spacer" }),
               h(Button, { className: "mtt-icon-button mtt-add-task", "aria-label": t("newTask"), title: t("newTask") + " (Shift+A)", disabled: archived || !projects.length, onClick: showComposer }, h(Icon, { name: "plus" })),
               h(Button, { className: "mtt-icon-button", "aria-label": t("filter"), title: t("filter"), "aria-expanded": filtersOpen, "data-active": !!query || status !== "all" || showDone, onClick: () => setFiltersOpen((v) => !v) }, h(Icon, { name: "filter" })),
