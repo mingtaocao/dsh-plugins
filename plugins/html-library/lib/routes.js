@@ -229,7 +229,7 @@ export function createRoutes(library, options = {}) {
 
     endpoint('POST', '/preview', async body => {
       if (typeof body.id !== 'string' || !body.id) throw new LibraryError('bad-request', '缺少文档 id');
-      return buildPreview(library, body.id, { interactive: body.interactive !== false });
+      return buildPreview(library, body.id, { interactive: body.interactive !== false, bundledSm2: options.bundledSm2 });
     }),
 
     endpoint('POST', '/entries', body => library.editEntry(body)),
