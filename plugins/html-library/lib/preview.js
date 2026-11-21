@@ -1,4 +1,5 @@
 /** Build a self-contained render copy. Source HTML/CSS and assets are never written. */
+import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -9,6 +10,8 @@ import { decodeBuffer, mimeFor } from './mime.js';
 import { LibraryError } from './library.js';
 
 const SM2_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/sm-crypto@0.3.13/dist/sm2.min.js';
+const SM2_MIRROR_URL = 'https://unpkg.com/sm-crypto@0.3.13/dist/sm2.js';
+const SM2_MIRROR_SHA256 = '320dc9bed7f6a6be32c690f893f87c9c1e5dfd7d56e44dbec056080b3cf7a08d';
 const CSP = "default-src 'none'; script-src 'none'; style-src 'unsafe-inline' data:; img-src data: blob:; font-src data:; media-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'";
 const HTML_NS = 'http://www.w3.org/1999/xhtml';
 const attr = (node, name) => node.attrs?.find(entry => entry.name === name);
@@ -54,9 +57,9 @@ export async function buildPreview(library, id, limits = {}) {
       return buffer.subarray(0, bytesRead);
     } finally { await handle.close(); }
   };
-  const readSm2 = async () => {
-    const response = await fetch(SM2_SCRIPT_URL, {
-      redirect: 'error', credentials: 'omit', signal: AbortSignal.timeout(10_000),
+  const downloadSm2 = async (url) => {
+    const response = await fetch(url, {
+      redirect: 'error', credentials: 'omit', signal: AbortSignal.timeout(6_000),
     });
     if (!response.ok || !response.body) {
       await response.body?.cancel();
@@ -66,11 +69,28 @@ export async function buildPreview(library, id, limits = {}) {
     const chunks = [];
     for await (const chunk of response.body) {
       size += chunk.length;
-      if (total + size > maxTotal || size > maxAsset) throw new Error('资源超过预览大小上限');
+      if (total + size > maxTotal || size > maxAsset) throw new RangeError('资源超过预览大小上限');
       chunks.push(chunk);
     }
+    const bytes = Buffer.concat(chunks, size);
+    if (url === SM2_MIRROR_URL && createHash('sha256').update(bytes).digest('hex') !== SM2_MIRROR_SHA256) {
+      throw new Error('备用脚本完整性校验失败');
+    }
     total += size;
-    return Buffer.concat(chunks, size);
+    return bytes;
+  };
+  const readSm2 = async () => {
+    const failures = [];
+    for (const url of [SM2_SCRIPT_URL, SM2_MIRROR_URL]) {
+      try {
+        return await downloadSm2(url);
+      } catch (error) {
+        if (error instanceof RangeError) throw error;
+        const reason = error.name === 'TimeoutError' ? '连接超时' : error.message;
+        failures.push(`${new URL(url).host}（${reason}）`);
+      }
+    }
+    throw new Error(`无法加载 SM2：${failures.join('、')}。请检查运行 DSH 的电脑的网络或代理设置。`);
   };
   const resource = async (reference, base, { asCss = false, stack = [], script = false } = {}) => {
     if (!reference || reference.startsWith('#') || /^data:/i.test(reference)) return reference;

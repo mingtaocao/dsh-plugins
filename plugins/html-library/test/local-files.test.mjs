@@ -158,5 +158,13 @@ test('interactive preview downloads the pinned SM2 script only for its exact URL
   assert.equal(download.mock.callCount(), 1);
   download.mock.mockImplementation(async () => { throw new Error('offline'); });
   const offline = await buildPreview(lib, id, { interactive: true });
-  assert.deepEqual(offline.warnings[0], { path: url, message: 'offline' });
+  assert.equal(offline.warnings[0].path, url);
+  assert.match(offline.warnings[0].message, /cdn\.jsdelivr\.net（offline）.*unpkg\.com（offline）/);
+  download.mock.mockImplementation(async target => {
+    if (target === url) throw new DOMException('timed out', 'TimeoutError');
+    assert.equal(target, 'https://unpkg.com/sm-crypto@0.3.13/dist/sm2.js');
+    return new Response('invalid mirror script');
+  });
+  const invalid = await buildPreview(lib, id, { interactive: true });
+  assert.match(invalid.warnings[0].message, /连接超时.*完整性校验失败/);
 });
