@@ -370,7 +370,6 @@ window.__ModuleLoader__.load({
       .mtt-project-heading{display:contents}
       .mtt-project-heading>h2{display:none}
       .mtt-head-spacer{flex:1}
-      .mtt-scope-name{font-size:11px;color:var(--mt-muted);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
       .mtt-add-task{color:var(--mt-accent)!important}
       .mtt-tools{margin:0 20px 12px;padding:8px 10px;flex-wrap:nowrap;gap:6px;background:var(--mt-surface);border:1px solid color-mix(in srgb,var(--mt-accent) 45%,var(--mt-line));border-radius:10px}
       .mtt-tools>input{border:0!important;padding:5px 2px!important;min-width:50px}
@@ -457,7 +456,7 @@ window.__ModuleLoader__.load({
       .mtt-inherited{font-size:11px;color:var(--mt-muted)}
       .mtt-message:not(.mtt-error){position:absolute;right:16px;bottom:12px;z-index:4;pointer-events:none;font-size:11px;background:var(--mt-surface);border-radius:6px;box-shadow:0 2px 12px #0000000a}
       .mtt-message:empty{padding:0;background:none;box-shadow:none}
-      @container task-main (max-width:560px){.mtt-head{padding:10px 14px;gap:6px}.mtt-head h1{font-size:16px}.mtt-tools,.mtt-filter-panel{margin-left:14px;margin-right:14px}.mtt-tools{flex-wrap:wrap}.mtt-tools>input{flex-basis:calc(100% - 32px)}.mtt-tools>select{max-width:100%;flex:1}.mtt-scope-name{display:none}.mtt-view-list .mtt-card-secondary{margin-left:26px}.mtt-card .mtt-child .mtt-parent-ref{margin-left:26px}.mtt-child>.mtt-child-more{position:absolute;right:8px;top:10px}.mtt-child>.mtt-task-title{padding-right:22px!important}.mtt-child>.mtt-completed-at{margin-left:26px}}
+      @container task-main (max-width:560px){.mtt-head{padding:10px 14px;gap:6px}.mtt-head h1{font-size:16px}.mtt-tools,.mtt-filter-panel{margin-left:14px;margin-right:14px}.mtt-tools{flex-wrap:wrap}.mtt-tools>input{flex-basis:calc(100% - 32px)}.mtt-tools>select{max-width:100%;flex:1}.mtt-view-list .mtt-card-secondary{margin-left:26px}.mtt-card .mtt-child .mtt-parent-ref{margin-left:26px}.mtt-child>.mtt-child-more{position:absolute;right:8px;top:10px}.mtt-child>.mtt-task-title{padding-right:22px!important}.mtt-child>.mtt-completed-at{margin-left:26px}}
       @container task-card (max-width:240px){
         .mtt-card-top>.mtt-note-trigger{display:none}
         .mtt-card-top>.mtt-task-title,.mtt-card-top>.mtt-task-title:has(+.mtt-note-trigger){padding-right:20px!important}
@@ -823,8 +822,17 @@ window.__ModuleLoader__.load({
         setAddingChild(null);
         return true;
       }
+      async function openGlobalView(nextView) {
+        if (!(await open(null))) return;
+        setScope("all");
+        setArchived(false);
+        setStatus("all");
+        setQuery("");
+        setView(nextView);
+      }
       async function toggleArchived() {
         if (!(await open(null))) return;
+        setView("list");
         setArchived((value) => !value);
         setScope("all");
         setNavSections((values) => ({ ...values, projects: true }));
@@ -1312,10 +1320,7 @@ window.__ModuleLoader__.load({
               { className: "mtt-views", role: "group", "aria-label": t("views") },
               h(Button, {
                 "aria-label": t("list"), title: t("list"), "aria-pressed": view === "list" && scope === "all" && !archived,
-                onClick: async () => {
-                  if (!(await open(null))) return;
-                  setScope("all"); setArchived(false); setStatus("all"); setQuery(""); setView("list");
-                },
+                onClick: () => openGlobalView("list"),
               }, h(Icon, { name: "list" }), h("span", { className: "mtt-project-label" }, t("list")), h("span", { className: "mtt-nav-count" }, (state?.tasks ?? []).filter((x) => x.parentId === null && x.status !== "done" && state.projects.some((p) => p.id === x.projectId && !p.archivedAt)).length)),
               h("h2", { className: "mtt-boards-heading" },
                 h(Button, {
@@ -1326,7 +1331,7 @@ window.__ModuleLoader__.load({
               ),
               h("div", { id: navId + "-boards", className: "mtt-board-links", hidden: !navSections.boards },
                 ["board", "matrix"].map((v) => h(Button, {
-                  key: v, "aria-label": t(v), title: t(v), "aria-pressed": view === v, onClick: () => setView(v),
+                  key: v, "aria-label": t(v), title: t(v), "aria-pressed": view === v, onClick: () => openGlobalView(v),
                 }, h(Icon, { name: v }), h("span", { className: "mtt-project-label" }, t(v)))),
               ),
             ),
@@ -1443,7 +1448,6 @@ window.__ModuleLoader__.load({
                   ),
                 )
               : null,
-              view !== "list" && current ? h("span", { className: "mtt-scope-name" }, current.name) : null,
               h("span", { className: "mtt-head-spacer" }),
               h(Button, { className: "mtt-icon-button mtt-add-task", "aria-label": t("newTask"), title: t("newTask") + " (Shift+A)", disabled: archived || !projects.length, onClick: showComposer }, h(Icon, { name: "plus" })),
               h(Button, { className: "mtt-icon-button", "aria-label": t("filter"), title: t("filter"), "aria-expanded": filtersOpen, "data-active": !!query || status !== "all" || showDone, onClick: () => setFiltersOpen((v) => !v) }, h(Icon, { name: "filter" })),
