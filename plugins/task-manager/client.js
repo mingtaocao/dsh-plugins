@@ -461,6 +461,20 @@ window.__ModuleLoader__.load({
         .mtt-child>.mtt-child-more{position:absolute;right:4px;top:5px}
         .mtt-card .mtt-child>.mtt-task-title{padding-right:18px!important}
       }
+    .mtt{--mt-accent:light-dark(#486077,#aac1d2);--mt-canvas:light-dark(#fafbfc,#191c20);--mt-sidebar:light-dark(#f4f6f7,#1e2328);--mt-surface:light-dark(#fff,#22272d);--mt-line:light-dark(#e2e5e8,#3b444d);--mt-muted:light-dark(#626b74,#b0bac2)}
+    .mtt .mtt-views button[aria-pressed=true]{background:light-dark(#e1e8ed,#303e49);color:light-dark(#304b62,#ccdeea)}
+    .mtt .mtt-group{background:light-dark(#f1f3f5,#262c32);border-radius:9px}
+    .mtt .mtt-group h2{color:light-dark(#505d68,#c4cdd4);font-weight:600}
+    .mtt .mtt-group h2 .mtt-count{background:none;color:light-dark(#69747c,#aeb8c0);font-weight:400;padding:0 2px;font-variant-numeric:tabular-nums}
+    .mtt .mtt-columns:not(.mtt-matrix) h2:before{content:'';box-sizing:border-box;width:9px;height:9px;border:1.5px solid light-dark(#89939b,#aab4bc);border-radius:50%}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(2) h2:before{border-color:light-dark(#526d82,#aac2d5);background:linear-gradient(to right,light-dark(#526d82,#aac2d5) 50%,transparent 50%)}
+    .mtt .mtt-columns:not(.mtt-matrix)>.mtt-group:nth-child(3) h2:before{border-color:light-dark(#73818a,#a7b4be);background:light-dark(#73818a,#a7b4be)}
+    .mtt .mtt-matrix>.mtt-group:first-child{background:light-dark(#e8eef2,#2c3943)}
+    .mtt .mtt-matrix>.mtt-group:first-child h2{color:light-dark(#354f63,#d3e1ec)}
+    .mtt .mtt-matrix>.mtt-group:first-child h2:before{content:'';height:12px;width:3px;background:light-dark(#506e83,#a6c1d5);border-radius:2px}
+    .mtt .mtt-chip[data-quadrant],.mtt .mtt-chip[data-status],.mtt .mtt-priority{color:light-dark(#626b74,#b0bac2)}
+    .mtt .mtt-chip[data-status=doing]{color:light-dark(#48647a,#b5cddf)}
+    .mtt .mtt-due[data-overdue=true]{color:light-dark(#92595b,#e4a3a5)!important}
       @media(max-width:780px){.mtt-projects{width:162px}.mtt-detail{width:300px}.mtt-nav-top{padding-left:5px}}
       @media(hover:none){.mtt-card button.mtt-child-more{opacity:1}}
       @media(prefers-reduced-motion:reduce){.mtt-projects{transition:none}}
