@@ -11,7 +11,7 @@
         # 初始知识目录（绝对路径）。只在第一次启动、还没有保存过目录时用作种子；
         # 之后以界面里的「添加 / 移除目录」为准（保存在 $DSH_HOME/dsh-html-library/library.json）。
         roots: []
-        # 使用本地依赖解析固定版本的 jsDelivr SM2 脚本引用。
+        # 允许在线加载固定版本的 jsDelivr SM2 脚本引用。
         bundledSm2: true
         # 扫描时额外排除的相对路径通配符，例如 ['**/draft/**', '*.bak.html']。
         # 默认已经排除 .git、node_modules、缓存目录等。
