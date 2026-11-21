@@ -94,7 +94,6 @@ window.__ModuleLoader__.load({
       complete: "标记完成",
       reopen: "恢复待办",
       completedOn: "完成于",
-      completedEstimated: "完成于（估算）",
       countsDetail: "主任务 / 子任务",
       move: "移动象限",
       inherited: "象限与项目跟随父任务",
@@ -204,7 +203,6 @@ window.__ModuleLoader__.load({
       complete: "Mark done",
       reopen: "Reopen",
       completedOn: "Completed",
-      completedEstimated: "Completed (estimated)",
       countsDetail: "Tasks / subtasks",
       move: "Move quadrant",
       inherited: "Project and quadrant follow the parent task",
@@ -603,9 +601,9 @@ window.__ModuleLoader__.load({
         };
       }, [dateLocale]);
       function completionTime(item, full = false) {
-        if (item.status !== "done" || !item.completedAt) return null;
+        if (item.status !== "done" || !item.completedAt || item.completionTimeEstimated) return null;
         const date = new Date(item.completedAt);
-        const label = t(item.completionTimeEstimated ? "completedEstimated" : "completedOn");
+        const label = t("completedOn");
         return h("time", {
           className: "mtt-completed-at" + (full ? " mtt-completed-full" : ""),
           dateTime: item.completedAt,

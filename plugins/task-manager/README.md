@@ -27,7 +27,7 @@ DSH 原生 Web 插件，任务数据由 Host 统一持久化，不依赖聊天�
 - DSH：`format=dsh-task-manager`、`schemaVersion=1`，保留项目、任务、子任务、归档、状态、象限与各视图顺序。
 - Super Productivity：仅支持官方公开 fixture 核实的 **`crossModelVersion=4.5`、含 `data` 的包装备份**。映射项目、活动主任务、子任务、完成状态、备注、截止日期和排序；未知版本或裸快照拒绝导入。
 - SP 历史归档任务不导入，预览显示数量；标签、计时、规划、配置及其他未支持字段列入诊断。源文件中的 Inbox 项目是普通导入项目，不会生成独立 Inbox/Backlog 模块。
-- SP 已完成任务无已核实的完成时间时，以导入时间记录并设置 `completionTimeEstimated=true`，不冒充原始完成时间。
+- SP 已完成任务无已核实的完成时间时，以导入时间记录并设置 `completionTimeEstimated=true`，列表和详情只显示完成状态，省略该时间。
 - 单文件最大 20 MiB，总实体最大 20,000。来源 ID 去重，不按标题合并；同名不同来源项目拒绝导入并提示先重命名。
 
 样本来源、hash、字段依据及许可证见 [兼容性说明](docs/COMPATIBILITY.md)。
